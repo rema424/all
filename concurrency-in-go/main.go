@@ -168,7 +168,7 @@ func main() {
 			select {
 			case <-done:
 				return "", fmt.Errorf("canceled")
-			case <-time.After(1 * time.Minute):
+			case <-time.After(1 * time.Second):
 			}
 			return "EN/US", nil
 		}
@@ -192,6 +192,25 @@ func main() {
 			return nil
 		}
 
+		genFarewell := func(done <-chan interface{}) (string, error) {
+			switch locale, err := locale(done); {
+			case err != nil:
+				return "", err
+			case locale == "EN/US":
+				return "goodbye", nil
+			}
+			return "", fmt.Errorf("unsupported locale")
+		}
+
+		printFarewell := func(done <-chan interface{}) error {
+			farewell, err := genFarewell(done)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s world!\n", farewell)
+			return nil
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -200,6 +219,17 @@ func main() {
 				return
 			}
 		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := printFarewell(done); err != nil {
+				fmt.Printf("%v", err)
+				return
+			}
+		}()
+
+		wg.Wait()
 	}
 
 	// context
