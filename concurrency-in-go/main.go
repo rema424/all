@@ -350,10 +350,15 @@ func main() {
 		var wg sync.WaitGroup
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+		// context.with
 
 		locale := func(ctx context.Context) (string, error) {
 			if deadline, ok := ctx.Deadline(); ok {
-				if deadline.Sub(time.Now().Add(1*time.Second)) <= 0 {
+				if deadline.Sub(time.Now().Add(1*time.Minute)) <= 0 {
+					// genGreeting() で 30 秒のデッドラインを設定しているが、1 分未満のデッドラインはここで即時にエラーを発生させる。
+					// genFarewell() はデッドラインの設定をしていないため、if をすり抜けて次の select でブロックされる。
+					// genGreeting() はここでエラーとなる。
+					// genFarewell() は select で1分のブロックをされてる間に genGreeting() の defer ctx.Done() が波及してすぐにエラー側に入る。
 					return "", context.DeadlineExceeded
 				}
 			}
@@ -361,13 +366,14 @@ func main() {
 			select {
 			case <-ctx.Done():
 				return "", ctx.Err()
-			case <-time.After(1 * time.Second):
+			case <-time.After(1 * time.Minute):
 			}
 			return "EN/US", nil
 		}
 
 		genGreeting := func(ctx context.Context) (string, error) {
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second) // 1秒 -> デッドライン
+			// ctx, cancel := context.WithTimeout(ctx, 6*time.Second) // 6秒 -> サクセス
 			defer cancel()
 
 			switch locale, err := locale(ctx); {
@@ -379,7 +385,55 @@ func main() {
 			return "", fmt.Errorf("unsupported locale")
 		}
 
-		wg.Done()
+		printGreeting := func(ctx context.Context) error {
+			greeting, err := genGreeting(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s world!\n", greeting)
+			return nil
+		}
+
+		genFarewell := func(ctx context.Context) (string, error) {
+			switch locale, err := locale(ctx); {
+			case err != nil:
+				return "", err
+			case locale == "EN/US":
+				return "good bye", nil
+			}
+			return "", fmt.Errorf("unsupported locale")
+		}
+
+		printFarewell := func(ctx context.Context) error {
+			farewell, err := genFarewell(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s world!\n", farewell)
+			return nil
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			if err := printGreeting(ctx); err != nil {
+				fmt.Printf("cannot print greeting: %v\n", err)
+				cancel()
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			if err := printFarewell(ctx); err != nil {
+				fmt.Printf("cannot print farewell: %v\n", err)
+				cancel()
+			}
+		}()
+
+		wg.Wait()
 	}
 
 	// {
