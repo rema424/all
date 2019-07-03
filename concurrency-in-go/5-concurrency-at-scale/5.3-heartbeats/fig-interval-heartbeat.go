@@ -54,13 +54,17 @@ func main() {
 				}
 			}
 
+			// メインのブロッキング処理
 			for {
 				select {
+				// キャンセル時
 				case <-done:
 					// 親によりキャンセルされた場合
 					return
+				// 1秒ごとに pulse に流れ込む
 				case <-pulse: // <5>
 					sendPulse()
+				// 2秒ごとに workGen に流れ込む
 				case r := <-workGen:
 					sendResult(r)
 				}
@@ -92,6 +96,15 @@ func main() {
 				return
 			}
 			fmt.Println("pulse")
+		case r, ok := <-results: // <5>
+			// results チャネルより select をかけます。ここでは特に面白いものはありません。
+			if ok == false {
+				return
+			}
+			fmt.Printf("results %v\n", r.Second())
+		case <-time.After(timeout): // <6>
+			// ハートビートも新しい結果も受け取らなかった場合にはタイムアウトします。
+			return
 		}
 	}
 }
