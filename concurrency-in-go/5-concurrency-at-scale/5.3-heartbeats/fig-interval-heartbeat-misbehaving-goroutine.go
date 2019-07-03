@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func main() {
+func execIntervalHeartbeatMisbehavingGoroutine() {
 	doWork := func(
 		done <-chan interface{},
 		pulseInterval time.Duration,
@@ -16,8 +16,8 @@ func main() {
 		results := make(chan time.Time)
 
 		go func() {
-			defer close(heartbeat)
-			defer close(results)
+			// defer close(heartbeat)
+			// defer close(results)
 
 			// doWork の引数で与えられた pulseInterval の周期でハートビートの鼓動を設定します。
 			// pulseInterval ごとにこのチャネルでは何かしら読み込めるようにします。
@@ -41,9 +41,9 @@ func main() {
 			sendResult := func(r time.Time) {
 				for {
 					select {
-					case <-done:
-						// 親によりキャンセルされた場合
-						return
+					// case <-done:
+					// 	// 親によりキャンセルされた場合
+					// 	return
 					case <-pulse: // <5>
 						// done チャネルと同様に、送信や受信を行うときはいつでもハートビートの
 						// 鼓動に対する条件を含める必要があります。

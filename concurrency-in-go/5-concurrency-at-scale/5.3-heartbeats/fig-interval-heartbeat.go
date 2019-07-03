@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func main() {
+func execIntervalHeartbeat() {
 	doWork := func(
 		done <-chan interface{},
 		pulseInterval time.Duration,
