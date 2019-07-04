@@ -1,6 +1,7 @@
 package main
 
 func main() {
-	execIntervalHeartbeat()
-	execIntervalHeartbeatMisbehavingGoroutine()
+	// execIntervalHeartbeat()
+	// execIntervalHeartbeatMisbehavingGoroutine()
+	execWorkUnitPulse()
 }
