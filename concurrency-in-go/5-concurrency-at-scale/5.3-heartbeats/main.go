@@ -3,5 +3,6 @@ package main
 func main() {
 	// execIntervalHeartbeat()
 	// execIntervalHeartbeatMisbehavingGoroutine()
-	execWorkUnitPulse()
+	// execWorkUnitPulse()
+	execIntervalDowork()
 }
