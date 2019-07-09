@@ -133,20 +133,26 @@ func execExampleStewardUsage() {
 
 		go func() {
 			<-done // <1>
+			// このゴルーチンは何もしておらず、キャンセルされるのを待っています。
+			// また、鼓動を全く送信していません。
 			log.Println("ward: I am halting.")
 		}()
 
 		return nil
 	}
 
+	// この行ではdoWorkが起動するゴルーチンのための管理人を作る関数を作成します。
+	// doWorkのタイムアウトは4秒に設定します。
 	doWorkWithSteward := newSteward(4*time.Second, doWork) // <2>
 
 	done := make(chan interface{})
+	// 管理人を停止させて、9秒後に中庭も停止させて、この例が終了するようにします。
 	time.AfterFunc(9*time.Second, func() { // <3>
 		log.Println("main: halting steward and ward.")
 		close(done)
 	})
 
+	// 最後に、管理人を起動して、鼓動をrangeで回して調べて、私たちの例が終了してしまうのを防ぎます。
 	for range doWorkWithSteward(done, 4*time.Second) {
 	} // <4>
 
