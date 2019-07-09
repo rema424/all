@@ -27,6 +27,10 @@ go get -u github.com/kardianos/govendor
 
 govendor init
 
+# v4 は Go Modules でしか使えない?ため
+govendor fetch github.com/labstack/echo@v3.3.10
+govendor fetch github.com/labstack/echo/middleware@v3.3.10
+
 govendor fetch +out
 
 echo "vendor/*" >> .gitignore
