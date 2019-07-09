@@ -127,6 +127,7 @@ func execExampleStewardUsage() {
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ltime | log.LUTC)
 
+	// これが中庭
 	doWork := func(done <-chan interface{}, _ time.Duration) <-chan interface{} {
 		log.Println("ward: Helo, I'm irresponsible!")
 
