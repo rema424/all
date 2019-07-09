@@ -17,10 +17,6 @@ heroku apps
 
 heroku rename heroku-go-echo -a rocky-depths-41914
 
-git init
-
-heroku git:remote -a heroku-go-echo
-
 heroku addons:add cleardb
 
 go get -u github.com/kardianos/govendor
@@ -33,8 +29,14 @@ govendor fetch github.com/labstack/echo/middleware@v3.3.10
 
 govendor fetch +out
 
+go run main.go
+
+git init
 echo "vendor/*" >> .gitignore
 echo '!vendor/vendor.json' >> .gitignore
+echo "web: $(basename `pwd`)" > Procfile
+heroku git:remote -a heroku-go-echo
+git push heroku master
 ```
 
 heroku git サブモジュールは認証が必要です
