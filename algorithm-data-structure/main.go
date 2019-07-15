@@ -11,7 +11,8 @@ import (
 func main() {
 	// measure(lib.ExecMaximamProfit)
 	// lib.ExecInsertionSort()
-	lib.ExecBubbleSort()
+	// lib.ExecBubbleSort()
+	lib.ExecSelectionSort()
 }
 
 type tm struct {
