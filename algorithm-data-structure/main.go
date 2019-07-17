@@ -13,7 +13,8 @@ func main() {
 	// lib.ExecInsertionSort()
 	// lib.ExecBubbleSort()
 	// lib.ExecSelectionSort()
-	lib.ExecStableSort()
+	// lib.ExecStableSort()
+	lib.ExecShellSort()
 }
 
 type tm struct {
