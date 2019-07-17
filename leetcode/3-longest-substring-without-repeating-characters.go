@@ -82,6 +82,8 @@ func LengthOfLongestSubstring_3(s string) int {
 	nextStart := map[string]int{}
 	for end := 0; end < n; end++ {
 		c := string(r[end])
+		// 対象文字が初めての出現か2回目以降かで場合分け
+		// もし2回目以降なのであれば、集計開始位置は前回の出現位置の右隣になる
 		if _, ok := nextStart[c]; ok {
 			start = int(math.Max(float64(nextStart[c]), float64(start)))
 		}

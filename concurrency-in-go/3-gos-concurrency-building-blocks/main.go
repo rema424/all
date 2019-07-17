@@ -9,5 +9,10 @@ func main() {
 	// execGoroutine_6()
 	// execGoroutine_7()
 	// execGoroutine_8()
-	execWaitGroup()
+	// execWaitGroup()
+	// execWaitGroup_2()
+	// execMutexAndRWMutex()
+	// execMutexAndRWMutex_2()
+	// execCond()
+	execCond_2()
 }
