@@ -194,3 +194,84 @@ func findMedianSortedArrays_3(nums1 []int, nums2 []int) float64 {
 	right := KthNumber(((m+n)/2 + 1), nums1, nums2)
 	return float64(left+right) / 2.0
 }
+
+func findMedianSortedArrays_4(nums1 []int, nums2 []int) float64 {
+	A := nums1
+	B := nums2
+	m := len(A)
+	n := len(B)
+	s := m + n
+
+	// サイズの大きい配列が最初になるようにする
+	if m > n {
+		A, B = B, A
+		m, n = n, m
+	}
+
+	// iMin, iMaxはセパレータを示す。
+	// 配列の添字ではない。
+	iMin, iMax := 0, m
+	// s が偶数の場合は左パートと右パートの個数が同じになるようにする。
+	// s が奇数の場合は左パートが右パートより1個多くなるようにする。
+	// 左ブロックの方が多くなるようにする
+	leftPartLen := (s + 1) / 2
+
+	for iMin <= iMax {
+		// 2分探索のため真ん中から調査を開始する
+		i := (iMin + iMax) / 2
+		// i + j = leftPartLen より
+		j := leftPartLen - i
+
+		switch {
+		case i < iMax && B[j-1] > A[i]:
+			// 右パートのA[i]が左パートのB[j-1]よりも大きくなければならない。
+			// iを右にスライドし、jを左にスライドさせる。
+			// i < iMax すなわち i <= iMax-1
+			iMin = i + 1
+		case i > iMin && A[i-1] > B[j]:
+			iMax = i - 1
+		default:
+			maxLeft := 0
+			switch {
+			case i == 0:
+				maxLeft = B[j-1]
+			case j == 0:
+				maxLeft = A[i-1]
+			default:
+				maxLeft = maxInt(A[i-1], B[j-1])
+			}
+
+			if (m+n)%2 == 1 {
+				return float64(maxLeft)
+			}
+
+			minRight := 0
+			switch {
+			case i == m:
+				minRight = B[j]
+			case j == n:
+				minRight = A[i]
+			default:
+				minRight = minInt(B[j], A[i])
+			}
+
+			return float64(maxLeft+minRight) / 2
+		}
+	}
+
+	return 0
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
