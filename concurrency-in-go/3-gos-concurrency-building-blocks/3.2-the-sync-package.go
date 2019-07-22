@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
+	"net"
 	"os"
 	"sync"
 	"text/tabwriter"
@@ -303,4 +305,82 @@ func execOnce_3() {
 		onceA.Do(initA)
 	}
 	onceA.Do(initA)
+}
+
+func execPool() {
+	myPool := &sync.Pool{
+		New: func() interface{} {
+			fmt.Println("Creating new instance.")
+			return struct{}{}
+		},
+	}
+
+	myPool.Get()
+	instance := myPool.Get()
+	myPool.Put(instance)
+	myPool.Get()
+}
+
+func execPool_2() {
+	var numCalcsCreated int
+	calcPool := &sync.Pool{
+		New: func() interface{} {
+			numCalcsCreated++
+			mem := make([]byte, 1024)
+			return &mem // <1>
+		},
+	}
+
+	// プールに4KB確保する
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+
+	const numWorkers = 1024 * 1024
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
+	for i := numWorkers; i > 0; i-- {
+		go func() {
+			defer wg.Done()
+			mem := calcPool.Get().(*[]byte) // <2>
+			defer calcPool.Put(mem)
+			// fmt.Println(i)
+		}()
+	}
+	wg.Wait()
+	fmt.Printf("%d calculators were created.", numCalcsCreated)
+}
+
+// go test -benchtime=10s -bench=.
+
+func connectToService() interface{} {
+	time.Sleep(1 * time.Second)
+	return struct{}{}
+}
+
+func startNetworkDeamon() *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		server, err := net.Listen("tcp", "localhost:3000")
+		if err != nil {
+			log.Fatalf("cannot listen: %v", err)
+		}
+		defer server.Close()
+
+		wg.Done()
+
+		for {
+			conn, err := server.Accept()
+			if err != nil {
+				log.Printf("cannot accept connection: %v", err)
+				continue
+			}
+			connectToService()
+			fmt.Fprintln(conn, "")
+			conn.Close()
+		}
+	}()
+	return &wg
 }
