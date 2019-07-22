@@ -230,16 +230,19 @@ func execCond_3() {
 	// こちらはClickedという状態（Cond）に対応するBroadcastを呼び出して、全てのハンドラーにマウスのボタンがクリックしたということを知らせます。
 	// （より堅牢な実装では最初にボタンが押下されたかを確認すれば良いでしょう。）
 
+	// ボタンがクリックされた時に、ボタンがあるウィンドウを最大化するのをシミュレートしたハンドラーを登録します。
 	subscribe(button.Clicked, func() { // <4>
 		fmt.Println("Maximizing window.")
 		clickRegisterd.Done()
 	})
 
+	// マウスがクリックされた時に、ダイアログボックスを表示するのをシミュレートしたハンドラーを登録します。
 	subscribe(button.Clicked, func() { // <5>
 		fmt.Println("Displaying annoying dialog box!")
 		clickRegisterd.Done()
 	})
 
+	// 次に、ユーザーがアプリケーションのボタンをクリックした状態からマウスのボタンを離した状態をシミュレートします。
 	subscribe(button.Clicked, func() { // <6>
 		fmt.Println("Mouse clicked.")
 		clickRegisterd.Done()
