@@ -198,3 +198,54 @@ func execCond_2() {
 		c.L.Unlock() // <7>
 	}
 }
+
+func execCond_3() {
+	// Clickedという条件を含んでいるButton型を定義します。
+	type Button struct { // <1>
+		Clicked *sync.Cond
+	}
+	button := Button{Clicked: sync.NewCond(&sync.Mutex{})}
+
+	// 条件に応じて送られてくるシグナルを扱う関数を登録するための便利な関数を定義します。
+	// 各ハンドラーはそれぞれのゴルーチン上で動作します。
+	// そしてsubscribeはゴルーチンが実行されていると確認できるまで終了しません。
+	subscribe := func(c *sync.Cond, fn func()) { // <2>
+		var goroutineRunning sync.WaitGroup
+		goroutineRunning.Add(1)
+		go func() {
+			goroutineRunning.Done()
+			c.L.Lock()
+			defer c.L.Unlock()
+			c.Wait()
+			fn()
+		}()
+		goroutineRunning.Wait()
+	}
+
+	// WaitGroupを作ります。これはプログラムがstdoutへ書き込む前に終了してしまわないようにするためだけのものです。
+	var clickRegisterd sync.WaitGroup // <3>
+	clickRegisterd.Add(3)
+
+	// マウスのボタンが離された時のハンドラーを設定します。
+	// こちらはClickedという状態（Cond）に対応するBroadcastを呼び出して、全てのハンドラーにマウスのボタンがクリックしたということを知らせます。
+	// （より堅牢な実装では最初にボタンが押下されたかを確認すれば良いでしょう。）
+
+	subscribe(button.Clicked, func() { // <4>
+		fmt.Println("Maximizing window.")
+		clickRegisterd.Done()
+	})
+
+	subscribe(button.Clicked, func() { // <5>
+		fmt.Println("Displaying annoying dialog box!")
+		clickRegisterd.Done()
+	})
+
+	subscribe(button.Clicked, func() { // <6>
+		fmt.Println("Mouse clicked.")
+		clickRegisterd.Done()
+	})
+
+	time.Sleep(2 * time.Second)
+	button.Clicked.Broadcast() // <7>
+	clickRegisterd.Wait()
+}
