@@ -4,6 +4,7 @@ import "fmt"
 
 func ExecShellSort() {
 	fmt.Println(ShellSort(5, 1, 4, 3, 2))
+	fmt.Println(ShellSort(5, 1, 4, 3, 2, 4, 5, 6, 3, 4, 5, 4, 5, 5, 10, 11, 31, 2, 6, 7))
 }
 
 var cnt int
