@@ -14,5 +14,11 @@ func main() {
 	// execMutexAndRWMutex()
 	// execMutexAndRWMutex_2()
 	// execCond()
-	execCond_2()
+	// execCond_2()
+	// execCond_3()
+	// execOnce()
+	// execOnce_2()
+	// execOnce_3()
+	// execPool()
+	execPool_2()
 }

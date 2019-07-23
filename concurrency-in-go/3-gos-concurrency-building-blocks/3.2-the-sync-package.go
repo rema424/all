@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
+	"net"
 	"os"
 	"sync"
 	"text/tabwriter"
@@ -197,4 +199,188 @@ func execCond_2() {
 		// 要素を無事キューに追加できたので条件のクリティカルセクションを抜けます。
 		c.L.Unlock() // <7>
 	}
+}
+
+func execCond_3() {
+	// Clickedという条件を含んでいるButton型を定義します。
+	type Button struct { // <1>
+		Clicked *sync.Cond
+	}
+	button := Button{Clicked: sync.NewCond(&sync.Mutex{})}
+
+	// 条件に応じて送られてくるシグナルを扱う関数を登録するための便利な関数を定義します。
+	// 各ハンドラーはそれぞれのゴルーチン上で動作します。
+	// そしてsubscribeはゴルーチンが実行されていると確認できるまで終了しません。
+	subscribe := func(c *sync.Cond, fn func()) { // <2>
+		var goroutineRunning sync.WaitGroup
+		goroutineRunning.Add(1)
+		go func() {
+			goroutineRunning.Done()
+			c.L.Lock()
+			defer c.L.Unlock()
+			c.Wait()
+			fn()
+		}()
+		goroutineRunning.Wait()
+	}
+
+	// WaitGroupを作ります。これはプログラムがstdoutへ書き込む前に終了してしまわないようにするためだけのものです。
+	var clickRegisterd sync.WaitGroup // <3>
+	clickRegisterd.Add(3)
+
+	// マウスのボタンが離された時のハンドラーを設定します。
+	// こちらはClickedという状態（Cond）に対応するBroadcastを呼び出して、全てのハンドラーにマウスのボタンがクリックしたということを知らせます。
+	// （より堅牢な実装では最初にボタンが押下されたかを確認すれば良いでしょう。）
+
+	// ボタンがクリックされた時に、ボタンがあるウィンドウを最大化するのをシミュレートしたハンドラーを登録します。
+	subscribe(button.Clicked, func() { // <4>
+		fmt.Println("Maximizing window.")
+		clickRegisterd.Done()
+	})
+
+	// マウスがクリックされた時に、ダイアログボックスを表示するのをシミュレートしたハンドラーを登録します。
+	subscribe(button.Clicked, func() { // <5>
+		fmt.Println("Displaying annoying dialog box!")
+		clickRegisterd.Done()
+	})
+
+	// 次に、ユーザーがアプリケーションのボタンをクリックした状態からマウスのボタンを離した状態をシミュレートします。
+	subscribe(button.Clicked, func() { // <6>
+		fmt.Println("Mouse clicked.")
+		clickRegisterd.Done()
+	})
+
+	time.Sleep(2 * time.Second)
+	button.Clicked.Broadcast() // <7>
+	clickRegisterd.Wait()
+}
+
+func execOnce() {
+	var count int
+
+	increment := func() {
+		count++
+	}
+
+	var once sync.Once
+
+	var increments sync.WaitGroup
+	increments.Add(100)
+	for i := 0; i < 100; i++ {
+		go func() {
+			defer increments.Done()
+			once.Do(increment)
+		}()
+	}
+
+	increments.Wait()
+	fmt.Printf("Count is %d\n", count)
+}
+
+func execOnce_2() {
+	var count int
+
+	increment := func() {
+		count++
+	}
+
+	decrement := func() {
+		count--
+	}
+
+	var once sync.Once
+	once.Do(increment)
+	once.Do(decrement)
+
+	fmt.Printf("Count: %d\n", count)
+}
+
+func execOnce_3() {
+	var onceA, onceB sync.Once
+	var initB func()
+	initA := func() {
+		onceB.Do(initB)
+	}
+	initB = func() {
+		onceA.Do(initA)
+	}
+	onceA.Do(initA)
+}
+
+func execPool() {
+	myPool := &sync.Pool{
+		New: func() interface{} {
+			fmt.Println("Creating new instance.")
+			return struct{}{}
+		},
+	}
+
+	myPool.Get()
+	instance := myPool.Get()
+	myPool.Put(instance)
+	myPool.Get()
+}
+
+func execPool_2() {
+	var numCalcsCreated int
+	calcPool := &sync.Pool{
+		New: func() interface{} {
+			numCalcsCreated++
+			mem := make([]byte, 1024)
+			return &mem // <1>
+		},
+	}
+
+	// プールに4KB確保する
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+	calcPool.Put(calcPool.New())
+
+	const numWorkers = 1024 * 1024
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
+	for i := numWorkers; i > 0; i-- {
+		go func() {
+			defer wg.Done()
+			mem := calcPool.Get().(*[]byte) // <2>
+			defer calcPool.Put(mem)
+			// fmt.Println(i)
+		}()
+	}
+	wg.Wait()
+	fmt.Printf("%d calculators were created.", numCalcsCreated)
+}
+
+// go test -benchtime=10s -bench=.
+
+func connectToService() interface{} {
+	time.Sleep(1 * time.Second)
+	return struct{}{}
+}
+
+func startNetworkDeamon() *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		server, err := net.Listen("tcp", "localhost:3000")
+		if err != nil {
+			log.Fatalf("cannot listen: %v", err)
+		}
+		defer server.Close()
+
+		wg.Done()
+
+		for {
+			conn, err := server.Accept()
+			if err != nil {
+				log.Printf("cannot accept connection: %v", err)
+				continue
+			}
+			connectToService()
+			fmt.Fprintln(conn, "")
+			conn.Close()
+		}
+	}()
+	return &wg
 }
