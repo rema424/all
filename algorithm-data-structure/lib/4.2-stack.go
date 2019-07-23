@@ -52,7 +52,8 @@ func (s Stack) Pop(x int) (ans int, ok bool) {
 	return
 }
 
-func ExecStack(args []string) {
+func ExecStack() {
+	args := []string{"1", "2", "+", "3", "4", "-", "*"}
 	top := 0
 	S := make([]int, 1000)
 
