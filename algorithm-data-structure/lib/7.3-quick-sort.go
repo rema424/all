@@ -26,6 +26,14 @@ func quickSort(cards []card, size, left, right int) []card {
 }
 
 func partition_2(cards []card, size, left, right int) int {
-	// ref := cards[right]
-	return 0
+	ref := cards[right]
+	smallTail := left - 1
+	for curr := left; curr < right; curr++ {
+		if cards[curr].value <= ref.value {
+			smallTail++
+			cards[smallTail], cards[curr] = cards[curr], cards[smallTail]
+		}
+	}
+	cards[smallTail+1], cards[right] = cards[right], cards[smallTail+1]
+	return smallTail + 1
 }
