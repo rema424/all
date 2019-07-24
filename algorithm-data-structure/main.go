@@ -16,7 +16,8 @@ func main() {
 	// lib.ExecStableSort()
 	// lib.ExecShellSort()
 	// lib.ExecStack([]string{"1", "2", "+", "3", "4", "-", "*"})
-	lib.ExecPartition()
+	// lib.ExecPartition()
+	lib.ExecQuickSort()
 }
 
 type tm struct {
