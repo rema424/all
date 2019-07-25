@@ -18,6 +18,7 @@ func main() {
 	// lib.ExecStack()
 	// lib.ExecQueue()
 	lib.ExecDoublyLinkedList()
+	lib.ExecAreasOnTheCrossSectionDiagram()
 	// lib.ExecStack([]string{"1", "2", "+", "3", "4", "-", "*"})
 	// lib.ExecPartition()
 	// lib.ExecQuickSort()
