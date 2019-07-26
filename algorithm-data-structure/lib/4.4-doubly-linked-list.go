@@ -27,15 +27,15 @@ func ExecDoublyLinkedList() {
 		prev *Node
 	}
 
-	sentinel := &Node{}
+	// sentinel := &Node{}
 
-	listSearch := func(key int) *Node {
-		cur := sentinel.next // 番兵の次から探す
-		for cur != nil && cur.key != key {
-			cur = cur.next
-		}
-		return cur
-	}
+	// listSearch := func(key int) *Node {
+	// 	cur := sentinel.next // 番兵の次から探す
+	// 	for cur != nil && cur.key != key {
+	// 		cur = cur.next
+	// 	}
+	// 	return cur
+	// }
 
 	for i := 0; i < args.num; i++ {
 		switch args.commands[i].name {

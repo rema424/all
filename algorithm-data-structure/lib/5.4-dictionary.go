@@ -2,6 +2,7 @@ package lib
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -22,6 +23,12 @@ func ExecDictionary() {
 	}
 	dictionaryWithMap(num, commands[:])
 	dictionaryWithArray(num, commands[:])
+	fmt.Println(searchPrimeNumber(100))
+	for i := 1; i < 100; i++ {
+		if primeNumber(i) {
+			fmt.Println(i, searchPrimeNumber(i))
+		}
+	}
 }
 
 func dictionaryWithMap(num int, commands []string) {
@@ -80,7 +87,7 @@ func convertCharToInt(char string) int {
 func getKeyByStr(str string) int {
 	sum := 0
 	p := 1
-	math.
+	// math.
 	for _, r := range []rune(str) {
 		sum += p * convertCharToInt(string(r))
 		p *= 5
@@ -128,15 +135,56 @@ func insert(str string) int {
 }
 
 func searchPrimeNumber(min int) int {
-
+	i := (min + 1) / 6
+	if (min+1)%6 == 0 {
+		i++
+	}
+	i++
+	for {
+		x := 6*i - 1
+		if primeNumber(x) {
+			return x
+		}
+		y := 6*i + 1
+		if primeNumber(y) {
+			return y
+		}
+		i++
+	}
 }
+
+// func primeNumber(x int) bool {
+// 	b := true
+// 	for m := 2; m < x; m++ {
+// 		if x%m == 0 {
+// 			b = false
+// 			break
+// 		}
+// 	}
+// 	return b
+// }
 
 func primeNumber(num int) bool {
 	if num <= 1 {
 		return false
-	} num == 2 || num == 3 {
-		return true
-	} else {
-
 	}
+
+	if num == 2 {
+		return false
+	}
+	if num%2 == 0 {
+		return false
+	}
+
+	b := true
+	root := int(math.Sqrt(float64(num)))
+	div := 3
+	for div <= root {
+		if num%div == 0 {
+			b = false
+			break
+		}
+		div += 2
+	}
+	return b
 }
