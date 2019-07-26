@@ -17,10 +17,11 @@ func main() {
 	// lib.ExecShellSort()
 	// lib.ExecStack()
 	// lib.ExecQueue()
-	lib.ExecAreasOnTheCrossSectionDiagram()
+	// lib.ExecAreasOnTheCrossSectionDiagram()
 	// lib.ExecStack([]string{"1", "2", "+", "3", "4", "-", "*"})
 	// lib.ExecPartition()
 	// lib.ExecQuickSort()
+	lib.ExecDictionary()
 }
 
 type tm struct {
