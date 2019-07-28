@@ -23,12 +23,6 @@ func ExecDictionary() {
 	}
 	dictionaryWithMap(num, commands[:])
 	dictionaryWithArray(num, commands[:])
-	fmt.Println(searchPrimeNumber(100))
-	for i := 1; i < 100; i++ {
-		if primeNumber(i) {
-			fmt.Println(i, searchPrimeNumber(i))
-		}
-	}
 }
 
 func dictionaryWithMap(num int, commands []string) {
@@ -48,143 +42,114 @@ func dictionaryWithMap(num int, commands []string) {
 	}
 }
 
-const primeN = 1046527
-
-var hashTable = make([]int, 1000000)
-
 func dictionaryWithArray(num int, commands []string) {
+	isPrimeNumber := func(num int) bool {
+		if num <= 1 {
+			return false
+		} else if num == 2 {
+			return true
+		} else if num%2 == 0 {
+			return false
+		}
+
+		for div := 3; div <= int(math.Sqrt(float64(num))); div += 2 {
+			if num%div == 0 {
+				return false
+			}
+		}
+		return true
+	}
+
+	calcNextPrimeNumber := func(min int) int {
+		var x int
+		for i := (min + 1) / 6; ; i++ { // 素数 = 6n ± 1 > min より
+			x = 6*i - 1
+			if x > min && isPrimeNumber(x) {
+				return x
+			}
+
+			x = 6*i + 1
+			if x > min && isPrimeNumber(x) {
+				return x
+			}
+		}
+	}
+
+	// 割り算の結果確実に余りが0にならないように大きな素数を計算に使う
+	primeN := calcNextPrimeNumber(num)
+
+	h1 := func(key int) int {
+		return key % primeN
+	}
+
+	h2 := func(key int) int {
+		return (key % (primeN - 1)) + 1
+	}
+
+	calcHash := func(key int, index int) int {
+		return (h1(key) + index*h2(key)) % primeN
+	}
+
+	hashTable := make([]int, primeN)
+
+	insert := func(hashTable []int, key int) int {
+		for i := 0; ; i++ {
+			hash := calcHash(key, i)
+			if hashTable[hash] == 0 {
+				hashTable[hash] = key
+				return hash
+			}
+		}
+	}
+
+	search := func(hashTable []int, key int) int {
+		for i := 0; ; i++ {
+			hash := calcHash(key, i)
+			if hashTable[hash] == key {
+				return hash
+			} else if hashTable[hash] == 0 || i >= len(hashTable) {
+				return -1
+			}
+		}
+	}
+
+	convertCharToInt := func(char string) int {
+		switch char {
+		case "A":
+			return 1
+		case "C":
+			return 2
+		case "G":
+			return 3
+		case "T":
+			return 4
+		default:
+			return 0
+		}
+	}
+
+	calcKey := func(str string) int {
+		sum := 0
+		p := 1
+		for _, r := range []rune(str) {
+			sum += p * convertCharToInt(string(r))
+			p *= 5 // 文字の種類が4種類で、4より大きな素数
+		}
+		return sum
+	}
+
 	for _, line := range commands {
 		command := strings.Split(line, " ")
+		key := calcKey(command[1])
 		switch command[0] {
 		case "insert":
-			insert(command[1])
+			insert(hashTable, key)
 		case "find":
-			if pos := find(command[1]); pos == -1 {
+			if pos := search(hashTable, key); pos == -1 {
 				fmt.Println("no")
 			} else {
 				fmt.Println("yes")
 			}
 		}
 	}
-
-}
-
-func convertCharToInt(char string) int {
-	switch char {
-	case "A":
-		return 1
-	case "C":
-		return 2
-	case "G":
-		return 3
-	case "T":
-		return 4
-	default:
-		return 0
-	}
-}
-
-func getKeyByStr(str string) int {
-	sum := 0
-	p := 1
-	// math.
-	for _, r := range []rune(str) {
-		sum += p * convertCharToInt(string(r))
-		p *= 5
-	}
-	return sum
-}
-
-func h1(key int) int {
-	return key % primeN
-}
-
-func h2(key int) int {
-	return (key % (primeN - 1)) + 1
-}
-
-func genHash(key int, index int) int {
-	return (h1(key) + index*h2(key)) % primeN
-}
-
-func find(str string) int {
-	key := getKeyByStr(str)
-	i := 0
-	for {
-		hash := genHash(key, i)
-		if hashTable[hash] == key {
-			return hash
-		} else if hashTable[hash] == 0 || i >= primeN {
-			return -1
-		}
-		i++
-	}
-}
-
-func insert(str string) int {
-	key := getKeyByStr(str)
-	i := 0
-	for {
-		hash := genHash(key, i)
-		if hashTable[hash] == 0 {
-			hashTable[hash] = key
-			return hash
-		}
-		i++
-	}
-}
-
-func searchPrimeNumber(min int) int {
-	i := (min + 1) / 6
-	if (min+1)%6 == 0 {
-		i++
-	}
-	i++
-	for {
-		x := 6*i - 1
-		if primeNumber(x) {
-			return x
-		}
-		y := 6*i + 1
-		if primeNumber(y) {
-			return y
-		}
-		i++
-	}
-}
-
-// func primeNumber(x int) bool {
-// 	b := true
-// 	for m := 2; m < x; m++ {
-// 		if x%m == 0 {
-// 			b = false
-// 			break
-// 		}
-// 	}
-// 	return b
-// }
-
-func primeNumber(num int) bool {
-	if num <= 1 {
-		return false
-	}
-
-	if num == 2 {
-		return false
-	}
-	if num%2 == 0 {
-		return false
-	}
-
-	b := true
-	root := int(math.Sqrt(float64(num)))
-	div := 3
-	for div <= root {
-		if num%div == 0 {
-			b = false
-			break
-		}
-		div += 2
-	}
-	return b
 }
