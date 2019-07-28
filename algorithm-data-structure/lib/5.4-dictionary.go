@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"math"
 	"strings"
 )
@@ -34,9 +33,9 @@ func dictionaryWithMap(num int, commands []string) {
 			dict[command[1]] = true
 		case "find":
 			if _, ok := dict[command[1]]; ok {
-				fmt.Println("yes")
+				// fmt.Println("yes")
 			} else {
-				fmt.Println("no")
+				// fmt.Println("no")
 			}
 		}
 	}
@@ -146,10 +145,121 @@ func dictionaryWithArray(num int, commands []string) {
 			insert(hashTable, key)
 		case "find":
 			if pos := search(hashTable, key); pos == -1 {
-				fmt.Println("no")
+				// fmt.Println("no")
 			} else {
-				fmt.Println("yes")
+				// fmt.Println("yes")
 			}
 		}
 	}
+}
+
+func dictionaryWithArrayOptimized(num int, commands []string) {
+
+	// 割り算の結果確実に余りが0にならないように大きな素数を計算に使う
+	primeN := calcNextPrimeNumber(num)
+	hashTable := make([]int, primeN)
+	for _, line := range commands {
+		command := strings.Split(line, " ")
+		key := calcKey(command[1])
+		switch command[0] {
+		case "insert":
+			insert(hashTable, key, primeN)
+		case "find":
+			if pos := search(hashTable, key, primeN); pos == -1 {
+				// fmt.Println("no")
+			} else {
+				// fmt.Println("yes")
+			}
+		}
+	}
+}
+
+func isPrimeNumber(num int) bool {
+	if num <= 1 {
+		return false
+	} else if num == 2 {
+		return true
+	} else if num%2 == 0 {
+		return false
+	}
+
+	for div := 3; div <= int(math.Sqrt(float64(num))); div += 2 {
+		if num%div == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func calcNextPrimeNumber(min int) int {
+	var x int
+	for i := (min + 1) / 6; ; i++ { // 素数 = 6n ± 1 > min より
+		x = 6*i - 1
+		if x > min && isPrimeNumber(x) {
+			return x
+		}
+
+		x = 6*i + 1
+		if x > min && isPrimeNumber(x) {
+			return x
+		}
+	}
+}
+
+func h1(key int, primeN int) int {
+	return key % primeN
+}
+
+func h2(key int, primeN int) int {
+	return (key % (primeN - 1)) + 1
+}
+
+func calcHash(key int, index int, primeN int) int {
+	return (h1(key, primeN) + index*h2(key, primeN)) % primeN
+}
+
+func insert(hashTable []int, key int, primeN int) int {
+	for i := 0; ; i++ {
+		hash := calcHash(key, i, primeN)
+		if hashTable[hash] == 0 {
+			hashTable[hash] = key
+			return hash
+		}
+	}
+}
+
+func search(hashTable []int, key int, primeN int) int {
+	for i := 0; ; i++ {
+		hash := calcHash(key, i, primeN)
+		if hashTable[hash] == key {
+			return hash
+		} else if hashTable[hash] == 0 || i >= len(hashTable) {
+			return -1
+		}
+	}
+}
+
+func convertCharToInt(char string) int {
+	switch char {
+	case "A":
+		return 1
+	case "C":
+		return 2
+	case "G":
+		return 3
+	case "T":
+		return 4
+	default:
+		return 0
+	}
+}
+
+func calcKey(str string) int {
+	sum := 0
+	p := 1
+	for _, r := range []rune(str) {
+		sum += p * convertCharToInt(string(r))
+		p *= 5 // 文字の種類が4種類で、4より大きな素数
+	}
+	return sum
 }
