@@ -1,6 +1,9 @@
 package lib
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 func ExecAreasOnTheCrossSectionDiagram() {
 	args := `\\///\_/\/\\\\/_/\\///__\\\_\\/_\/_/\`
@@ -83,4 +86,137 @@ func (s *areaStack) pop() pair {
 	x := s.data[s.top]
 	s.top--
 	return x
+}
+
+func ExecAreasOnTheCrossSectionDiagramOptimized() {
+	args := `\\///\_/\/\\\\/_/\\///__\\\_\\/_\/_/\`
+	AreasOnTheCrossSectionDiagramOptimized(args)
+	AreasOnTheCrossSectionDiagramOptimized_2(args)
+}
+
+func AreasOnTheCrossSectionDiagramOptimized(args string) {
+	runes := []rune(args)
+	bars := make([]int, 0, len(runes))
+	areas := map[int]int{}
+
+	push := func(pos int) {
+		bars = append(bars, pos)
+	}
+
+	pop := func() (int, bool) {
+		n := len(bars)
+		if n == 0 {
+			return 0, false
+		}
+
+		x := bars[n-1]
+		bars = bars[:n-1]
+		return x, true
+	}
+
+	for i, r := range runes {
+		char := string(r)
+		switch char {
+		case `\`:
+			push(i)
+		case `/`:
+			if pos, ok := pop(); ok {
+				area := i - pos
+				for key, val := range areas {
+					if pos < key && key < i {
+						area += val
+						delete(areas, key)
+					}
+				}
+				areas[pos] = area
+			}
+		case `_`:
+		}
+	}
+
+	keys := make([]int, 0, len(areas))
+	for key, _ := range areas {
+		keys = append(keys, key)
+	}
+
+	sort.Ints(keys)
+
+	var sum int
+	for _, area := range areas {
+		sum += area
+	}
+
+	fmt.Println(sum)
+	fmt.Print(len(areas), " ")
+	for _, key := range keys {
+		fmt.Print(areas[key], " ")
+	}
+	fmt.Print("\n")
+}
+
+func AreasOnTheCrossSectionDiagramOptimized_2(args string) {
+	runes := []rune(args)
+
+	bars := make([]int, 0, len(runes))
+	push := func(pos int) {
+		bars = append(bars, pos)
+	}
+	pop := func() (int, bool) {
+		n := len(bars)
+		if n == 0 {
+			return 0, false
+		}
+
+		x := bars[n-1]
+		bars = bars[:n-1]
+		return x, true
+	}
+
+	areas := make([][]int, 0, len(runes))
+	pushA := func(x []int) {
+		areas = append(areas, x)
+	}
+	popA := func() ([]int, bool) {
+		n := len(areas)
+		if n == 0 {
+			return nil, false
+		}
+
+		x := areas[n-1]
+		areas = areas[:n-1]
+		return x, true
+	}
+
+	for i, r := range runes {
+		char := string(r)
+		switch char {
+		case `\`:
+			push(i)
+		case `/`:
+			if pos, ok := pop(); ok {
+				area := i - pos
+				for range areas {
+					n := len(areas)
+					if pos < areas[n-1][0] && areas[n-1][0] < i {
+						under, _ := popA()
+						area += under[1]
+					}
+				}
+				pushA([]int{pos, area})
+			}
+		case `_`:
+		}
+	}
+
+	var sum int
+	for _, area := range areas {
+		sum += area[1]
+	}
+
+	fmt.Println(sum)
+	fmt.Print(len(areas), " ")
+	for _, area := range areas {
+		fmt.Print(area[1], " ")
+	}
+	fmt.Print("\n")
 }
