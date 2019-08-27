@@ -59,5 +59,15 @@ scrapy crawl quotes -t json -o stdout: --nolog
 
 scrapy crawl quotes -o out_$(date "+%Y-%m-%d_%H:%M").css
 
+scrapy shell http://quotes.toscrape.com
 
+ctrl + D
+
+cd ..
+
+scrapy startproject cartune cartune-test
+
+cd cartune-test
+
+scrapy genspider cars cartune.me
 ```
