@@ -84,4 +84,5 @@ scrapy crawl pickups -t json -o stdout: --nolog
 
 scrapy genspider pickups_detail cartune.me
 
+vi items.py
 ```

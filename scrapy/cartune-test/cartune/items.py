@@ -14,3 +14,16 @@ class CartuneItem(scrapy.Item):
     # pass
     car = scrapy.Field()
     url = scrapy.Field()
+
+
+class PickupDetailItem(scrapy.Item):
+    car = scrapy.Field()
+    url = scrapy.Field()
+    user = scrapy.Field()
+    tags = scrapy.Field()
+
+
+class YahooJapanDetailItem(scrapy.Item):
+    headline = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
