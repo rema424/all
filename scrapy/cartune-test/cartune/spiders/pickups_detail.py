@@ -2,8 +2,8 @@
 import scrapy
 
 
-class CarsSpider(scrapy.Spider):
-    name = 'cars'
+class PickupsDetailSpider(scrapy.Spider):
+    name = 'pickups_detail'
     allowed_domains = ['cartune.me']
     start_urls = ['http://cartune.me/']
 

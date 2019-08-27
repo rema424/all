@@ -69,5 +69,19 @@ scrapy startproject cartune cartune-test
 
 cd cartune-test
 
-scrapy genspider cars cartune.me
+scrapy genspider pickups cartune.me
+
+vi items.py
+
+vi pickups.py
+
+scrapy crawl pickups -t json -o stdout: --nolog
+
+vi settings.py
+# FEED_EXPORT_ENCODING = 'utf-8'
+
+scrapy crawl pickups -t json -o stdout: --nolog
+
+scrapy genspider pickups_detail cartune.me
+
 ```

@@ -11,4 +11,6 @@ import scrapy
 class CartuneItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    # pass
+    car = scrapy.Field()
+    url = scrapy.Field()
