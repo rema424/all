@@ -85,4 +85,18 @@ scrapy crawl pickups -t json -o stdout: --nolog
 scrapy genspider pickups_detail cartune.me
 
 vi items.py
+
+# とあるページ（固定）内のリンクを辿るスパイダー
+vi items.py
+
+scrapy genspider -t crawl popular_car_crawl cartune.me
+
+vi popular_car_crawl.py
+
+vi settings.py
+# DEPTH_LIMIT 1 or 2
+
+scrapy crawl popular_car_crawl -t json -o stdout: --nolog
+
+scrapy crawl popular_car_crawl -t csv -o stdout: --nolog
 ```

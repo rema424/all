@@ -12,3 +12,5 @@
 *.out
 
 vendor/*
+
+__pycache__/
