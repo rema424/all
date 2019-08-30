@@ -58,9 +58,12 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-# EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-# }
+EXTENSIONS = {
+    #  'scrapy.extensions.telnet.TelnetConsole': None,
+    'scrapy.extensions.closespider.CloseSpider': 1,
+}
+
+CLOSESPIDER_ITEMCOUNT = 500
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
@@ -90,4 +93,4 @@ ROBOTSTXT_OBEY = True
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 FEED_EXPORT_ENCODING = 'utf-8'
-DEPTH_LIMIT = 1
+DEPTH_LIMIT = 2

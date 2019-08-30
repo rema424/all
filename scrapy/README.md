@@ -99,4 +99,23 @@ vi settings.py
 scrapy crawl popular_car_crawl -t json -o stdout: --nolog
 
 scrapy crawl popular_car_crawl -t csv -o stdout: --nolog
+
+# 再帰処理するスパイダー
+vi items.py
+
+scrapy genspider -t crawl note_crawl cartune.me
+
+vi note_crawl.py
+
+vi settings.py
+# EXTENSIONS = {
+#     #  'scrapy.extensions.telnet.TelnetConsole': None,
+#     'scrapy.extensions.closespider.CloseSpider': 1,
+# }
+
+# CLOSESPIDER_ITEMCOUNT = 500
+# DEPTH_LIMIT 3
+
+scrapy crawl note_crawl -t json -o stdout: --nolog
+
 ```

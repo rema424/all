@@ -33,3 +33,10 @@ class PopularCarArticleItem(scrapy.Item):
     car = scrapy.Field()
     article_title = scrapy.Field()
     article_url = scrapy.Field()
+
+
+class NoteItem(scrapy.Field):
+    car = scrapy.Field()
+    user = scrapy.Field()
+    tags = scrapy.Field()
+    url = scrapy.Field()
