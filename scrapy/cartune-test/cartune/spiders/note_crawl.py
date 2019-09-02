@@ -26,4 +26,4 @@ class NoteCrawlSpider(CrawlSpider):
             'p.noteDetail-user-name a::text').extract_first()
         item['tags'] = response.css(
             'div.noteDetail-header ul span::text').extract()
-        return item
+        yield item

@@ -118,4 +118,30 @@ vi settings.py
 
 scrapy crawl note_crawl -t json -o stdout: --nolog
 
+# スクレイピング結果を DB に保存する
+
+mysql -uroot
+create database scrapy;
+create user scraper@localhost identified by 'Passw0rd!';
+grant all privileges on scrapy.* to scraper@localhost;
+quit
+mysql -u scraper -pPassw0rd!
+use scrapy;
+create table notes (
+  url varchar(255),
+  car varchar(50),
+  user varchar(50),
+  PRIMARY KEY(url)
+);
+quit
+
+# pip3 install MySQL-Python
+pip3 install mysqlclient
+
+vi pipilines.py
+
+vi settngs.py
+# ITEM_PIPELINES = {
+#     'cartune.pipelines.CartunePipeline': 300,
+# }
 ```
