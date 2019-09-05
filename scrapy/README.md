@@ -57,7 +57,7 @@ scrapy crawl quotes -t csv -o stdout: --nolog
 
 scrapy crawl quotes -t json -o stdout: --nolog
 
-scrapy crawl quotes -o out_$(date "+%Y-%m-%d_%H:%M").css
+scrapy crawl quotes -o out_$(date "+%Y-%m-%d_%H:%M").csv
 
 scrapy shell http://quotes.toscrape.com
 
