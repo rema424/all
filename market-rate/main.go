@@ -97,9 +97,16 @@ func main() {
 	}
 
 	// パーツ一覧抽出
-	wordsExtractQuery := `SELECT distinct(word) from prices where method = ?;`
+	wordsExtractQuery := `SELECT distinct(word) as word
+	from prices
+	where method = ?
+	having word not in (
+		select distinct(parts_name)
+		from rates
+		where method = ?
+	);`
 	var words []string
-	if err := db.Select(&words, wordsExtractQuery, method); err != nil {
+	if err := db.Select(&words, wordsExtractQuery, method, method); err != nil {
 		panic(err)
 	}
 	fmt.Println(words)
