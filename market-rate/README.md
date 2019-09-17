@@ -42,15 +42,14 @@ create table prices (
     title varchar(150),
     url varchar(255),
     site varchar(30),
-    method varchar(20),
-    PRIMARY KEY(url, method),
+    PRIMARY KEY(word, url),
     KEY(word, price)
 );
 
 create table rates (
   id int auto_increment,
   parts_name varchar(30),
-  method varchar(20),
+  memo varchar(100),
   narrow_rate float,
   sample_size int,
   skew float,
@@ -63,7 +62,7 @@ create table rates (
   max float,
   ratio float,
   PRIMARY KEY(id),
-  KEY(parts_name)
+  KEY(parts_name, skew)
 );
 
 desc prices;
@@ -82,5 +81,5 @@ echo $DSN
 
 vi main.go
 
-mv -i ~/Downloads/items_all_XX.csv ./items.csv
+mv -f ~/Downloads/items_all_XX.csv ./items.csv
 ```
