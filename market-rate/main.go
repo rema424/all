@@ -624,9 +624,9 @@ func calcTireRate(words []string) {
 	}
 }
 
-func calcWHeelRate(words []string) {
-	log.Println("calcWHeelRate started.")
-	defer log.Println("calcWHeelRate finished.")
+func calcWheelRate(words []string) {
+	log.Println("calcWheelRate started.")
+	defer log.Println("calcWheelRate finished.")
 
 	// ループ処理
 	for _, word := range words {
@@ -637,11 +637,11 @@ func calcWHeelRate(words []string) {
 		// 通常
 		calc(word, prices, "フィルターなし")
 		// 禁止ワードで除外
-		step1 := priceFilterByForbiddenWord(prices, []string{"新品", "未使用", "ジャンク", "欠品", "タイヤ", "タイア", "希少", "非売", " + "})
+		step1 := priceFilterByForbiddenWord(prices, []string{"新品", "未使用", "ジャンク", "欠品", "タイヤ", "タイア", "ﾀｲﾔ", "希少", "非売", " + "})
 		calc(word, step1, "禁止ワード除外")
 		// 価格でフィルタ
-		step2 := priceFilterByMoney(step1, 30000, 2300000)
-		calc(word, step2, "3万以上23万以下")
+		step2 := priceFilterByMoney(step1, 50000, 250000)
+		calc(word, step2, "5万以上25万以下")
 		// パーツ名完全一致
 		step3 := priceFilterByPerfectMatchName(step2, word)
 		calc(word, step3, "パーツ名完全一致")
@@ -682,6 +682,7 @@ LABEL:
 	for _, p := range prices {
 		for _, word := range words {
 			if strings.Contains(p.Title, word) {
+				log.Println(p.Title)
 				continue LABEL
 			}
 		}
