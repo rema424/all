@@ -92,7 +92,7 @@ func main() {
 
 	switch ope {
 	case "":
-		cate = "3"
+		ope = "3"
 	case "1", "2", "3":
 	default:
 		panic("不正な値が入力されました。")
@@ -107,7 +107,7 @@ func main() {
 		words := extractRateCalcTargetWords(cate)
 		switch cate {
 		case "1": //　ホイール
-			// calcWheelRate(words)
+			calcWheelRate(words)
 		case "2": // タイヤ
 			calcTireRate(words)
 		case "3": // 車高長
@@ -522,13 +522,21 @@ func importCSV() {
 	`
 	var word, price, title, url, site string
 
+	tx := db.MustBegin()
+	var dberr error
 	for {
+		if dberr != nil {
+			break
+		}
+
 		line, err := reader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			panic(err)
 		}
+
+		log.Println(len(line), line)
 
 		if len(line) == 5 {
 			price = line[0]
@@ -542,13 +550,16 @@ func importCSV() {
 			title = line[3]
 			url = line[4]
 			word = line[5]
-
 		}
 
-		if _, err := db.Exec(query, word, price, title, url, site, price, title); err != nil {
-			panic(err)
-		}
+		_, dberr = tx.Exec(query, word, price, title, url, site, price, title)
 	}
+
+	if dberr != nil {
+		tx.Rollback()
+		panic(dberr)
+	}
+	tx.Commit()
 
 	log.Println("importCSV finished.")
 }
@@ -590,8 +601,8 @@ having word not in (select distinct(parts_name) from rates);`
 }
 
 func calcTireRate(words []string) {
-	log.Println("priceFilterByPerfectMatchName started.")
-	defer log.Println("priceFilterByPerfectMatchName finished.")
+	log.Println("calcTireRate started.")
+	defer log.Println("vs finished.")
 
 	// ループ処理
 	for _, word := range words {
@@ -601,12 +612,36 @@ func calcTireRate(words []string) {
 		// 相場計算
 		// 通常
 		calc(word, prices, "フィルターなし")
-		// 価格でフィルタ
-		step1 := priceFilterByMoney(prices, 3000, 100000)
-		calc(word, step1, "3000以上10万以下")
 		// 禁止ワードで除外
-		step2 := priceFilterByForbiddenWord(step1, []string{"新品", "未使用", "ジャンク", "欠品", "ホイール", "希少", "非売"})
-		calc(word, step2, "禁止ワード除外")
+		step1 := priceFilterByForbiddenWord(prices, []string{"新品", "未使用", "ジャンク", "欠品", "ホイール", "ホイル", "希少", "非売", " + "})
+		calc(word, step1, "禁止ワード除外")
+		// 価格でフィルタ
+		step2 := priceFilterByMoney(step1, 3000, 100000)
+		calc(word, step2, "3000以上10万以下")
+		// パーツ名完全一致
+		step3 := priceFilterByPerfectMatchName(step2, word)
+		calc(word, step3, "パーツ名完全一致")
+	}
+}
+
+func calcWHeelRate(words []string) {
+	log.Println("calcWHeelRate started.")
+	defer log.Println("calcWHeelRate finished.")
+
+	// ループ処理
+	for _, word := range words {
+		log.Println("calc", word)
+		// 価格レコードを取得
+		prices := priceListByWord(word)
+		// 相場計算
+		// 通常
+		calc(word, prices, "フィルターなし")
+		// 禁止ワードで除外
+		step1 := priceFilterByForbiddenWord(prices, []string{"新品", "未使用", "ジャンク", "欠品", "タイヤ", "タイア", "希少", "非売", " + "})
+		calc(word, step1, "禁止ワード除外")
+		// 価格でフィルタ
+		step2 := priceFilterByMoney(step1, 30000, 2300000)
+		calc(word, step2, "3万以上23万以下")
 		// パーツ名完全一致
 		step3 := priceFilterByPerfectMatchName(step2, word)
 		calc(word, step3, "パーツ名完全一致")
@@ -643,13 +678,14 @@ func priceFilterByForbiddenWord(prices []Price, words []string) []Price {
 	defer log.Println("priceFilterByForbiddenWord finished.")
 
 	res := make([]Price, 0, len(prices))
+LABEL:
 	for _, p := range prices {
 		for _, word := range words {
 			if strings.Contains(p.Title, word) {
-				break
+				continue LABEL
 			}
-			res = append(res, p)
 		}
+		res = append(res, p)
 	}
 	return res
 }
