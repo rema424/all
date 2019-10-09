@@ -110,3 +110,14 @@ func redisTutorial_2() {
 		printStatus(pool)
 	}
 }
+
+func redisTutorial_3() {
+	conn, err := redis.Dial("tcp", "localhost:6379")
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	psc := redis.PubSubConn{Conn: conn}
+
+}
