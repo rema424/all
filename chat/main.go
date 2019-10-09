@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"time"
 
+	"chat/infra"
+
 	"github.com/gomodule/redigo/redis"
 )
 
 func main() {
 	// redisTutorial_1()
-	redisTutorial_2()
+	// redisTutorial_2()
+	infra.Run()
 }
 
-func redisTutorial_1() {
+func redisTutorial1() {
 	conn, err := redis.Dial("tcp", ":6379")
 	if err != nil {
 		panic(err)
@@ -76,7 +79,7 @@ func redisTutorial_1() {
 	}
 }
 
-func redisTutorial_2() {
+func redisTutorial2() {
 	pool := &redis.Pool{
 		Dial: func() (redis.Conn, error) {
 			return redis.Dial("tcp", "localhost:6379")
@@ -111,13 +114,13 @@ func redisTutorial_2() {
 	}
 }
 
-func redisTutorial_3() {
+func redisTutorial3() {
 	conn, err := redis.Dial("tcp", "localhost:6379")
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
-	psc := redis.PubSubConn{Conn: conn}
+	// psc := redis.PubSubConn{Conn: conn}
 
 }

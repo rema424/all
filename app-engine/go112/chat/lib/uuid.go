@@ -13,7 +13,5 @@ func UUID() string {
 		return ""
 	}
 
-	id := u.String()
-	log.Println(id)
-	return id
+	return u.String()
 }
