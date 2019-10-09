@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
 
 func main() {
-	redisTutorial_1()
+	// redisTutorial_1()
+	redisTutorial_2()
 }
 
 func redisTutorial_1() {
@@ -75,9 +77,36 @@ func redisTutorial_1() {
 }
 
 func redisTutorial_2() {
-	conn, err := redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
+	pool := &redis.Pool{
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", "localhost:6379")
+		},
+		IdleTimeout: 4 * 60 * time.Second,
+		MaxActive:   6,
+		MaxIdle:     3,
 	}
-	defer conn.Close()
+
+	printStatus := func(pool *redis.Pool) {
+		s := pool.Stats()
+		fmt.Printf("Active: %d, Idle: %d, InUse: %d\n", s.ActiveCount, s.IdleCount, s.ActiveCount-s.IdleCount)
+	}
+
+	printStatus(pool)
+
+	fmt.Println("------")
+
+	conns := make([]redis.Conn, 10)
+	for i := 0; i < 10; i++ {
+		conns[i] = pool.Get()
+		fmt.Printf("%d: ", i)
+		printStatus(pool)
+	}
+
+	fmt.Println("------")
+
+	for i, conn := range conns {
+		conn.Close()
+		fmt.Printf("%d: ", i)
+		printStatus(pool)
+	}
 }
