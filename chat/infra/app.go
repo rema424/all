@@ -1,32 +1,11 @@
 package infra
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
-
-var e = createMux()
-
-// var db = connectDB()
-var redisConn = connectRedis()
-
-// Run ...
-func Run() {
-	http.Handle("/", e)
-
-	port := mustGetenv("APP_PORT")
-	if port == "" {
-		port = "8080"
-		log.Printf("Defaulting to port %s", port)
-	}
-
-	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
-}
 
 func createMux() *echo.Echo {
 	e := echo.New()
