@@ -6,12 +6,11 @@ import (
 	"net/http"
 )
 
-var e = createMux()
-var db = connectDB()
-var rds = connectRedis()
-
 // Run ...
 func Run() {
+	var e = createMux()
+	// var db = connectDB()
+	// var rds = connectRedis()
 	http.Handle("/", e)
 
 	port := mustGetenv("APP_PORT")
