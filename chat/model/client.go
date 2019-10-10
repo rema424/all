@@ -1,13 +1,27 @@
 package model
 
 import (
+	"time"
+
 	"github.com/gorilla/websocket"
 )
 
-// Client ...
-type Client struct {
+// WSClient ...
+type WSClient struct {
 	hub     *Hub
-	conn    *websocket.Conn
+	wsconn  *websocket.Conn
 	user    *User
 	message chan *Message
 }
+
+const (
+	pongWait       = 3 * time.Second
+	pingPeriod     = 2 * time.Second
+	maxMessageSize = 512
+)
+
+// // Upgrader ...
+// var Upgrader = websocket.Upgrader{
+// 	ReadBufferSize:  1024,
+// 	WriteBufferSize: 1024,
+// }

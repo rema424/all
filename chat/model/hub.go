@@ -2,7 +2,7 @@ package model
 
 // Hub ...
 type Hub struct {
-	clients    map[*Client]bool
+	clients    map[*WSClient]bool
 	room       *Room
 	message    chan *Message
 	ctl        chan *Message
@@ -12,11 +12,11 @@ type Hub struct {
 
 // Register ...
 type Register struct {
-	client *Client
+	client *WSClient
 }
 
 // Unregister ...
 type Unregister struct {
-	client *Client
+	client *WSClient
 	msg    string
 }
