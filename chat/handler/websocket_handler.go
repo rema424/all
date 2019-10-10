@@ -22,9 +22,15 @@ func ConnectWebSocket(c echo.Context) error {
 
 	wsconn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		log.Println(err)
+		log.Println("Open connection error:", err)
+		return err
 	}
 	defer wsconn.Close()
+	log.Println("Successfully connected")
+
+	// ログインユーザーを取得する
+
+	// クライアントオブジェクトを作る
 
 	for {
 		// Write
