@@ -21,7 +21,7 @@ func GetUserByID(db *sqlx.DB, userID int) (*model.User, error) {
 }
 
 // GetUserByUserName ...
-func GetUserByUserName(db *sqlx.Tx, username string) (*model.User, error) {
+func GetUserByUserName(db *sqlx.DB, username string) (*model.User, error) {
 	q := `
   SELECT id, full_name, username, mail, password
   FROM user
