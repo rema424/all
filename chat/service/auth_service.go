@@ -12,7 +12,7 @@ import (
 
 // Login はログインを実行します。
 func Login(db *sqlx.DB, username, password string) LoginOut {
-	u, err := repository.GetUserByUserName(db, username)
+	_, err := repository.GetUserByUserName(db, username)
 	if err != nil {
 
 	}

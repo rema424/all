@@ -12,7 +12,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func connectDB() *sqlx.DB {
+// ConnectDB ...
+func ConnectDB() *sqlx.DB {
 	var (
 		host     = mustGetenv("DB_HOST")
 		port     = mustGetenv("DB_PORT")
@@ -50,8 +51,8 @@ func connectDB() *sqlx.DB {
 	return db
 }
 
-// MyDB ...
-// type MyDB struct {
+// DB ...
+// type DB struct {
 // 	*sqlx.DB
 // }
 
@@ -62,8 +63,8 @@ type querier interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-// MyDB ...
-type MyDB struct {
+// DB ...
+type DB struct {
 	querier   // 無名フィールド。クエリを発行する実体を入れる。具体的には sqlx.DB または sqlx.Tx
 	ctx       context.Context
 	WarnTime  time.Duration
@@ -71,9 +72,9 @@ type MyDB struct {
 	logHidden bool
 }
 
-// NewMyDB ...
-func NewMyDB(ctx context.Context, q querier) *MyDB {
-	return &MyDB{
+// NewDB ...
+func NewDB(ctx context.Context, q querier) *DB {
+	return &DB{
 		querier:  q,
 		ctx:      ctx,
 		WarnTime: 150 * time.Millisecond,
@@ -82,7 +83,7 @@ func NewMyDB(ctx context.Context, q querier) *MyDB {
 }
 
 // Get ...
-func (db *MyDB) Get(dest interface{}, query string, args ...interface{}) error {
+func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {
 	start := time.Now()
 	err := db.querier.Get(dest, query, args...)
 	db.log(start, err, query, args, countRows(dest))
@@ -90,10 +91,10 @@ func (db *MyDB) Get(dest interface{}, query string, args ...interface{}) error {
 }
 
 // TxFunc ...
-type TxFunc func(db *MyDB) error
+type TxFunc func(db *DB) error
 
 // BeginTx ...
-func (db *MyDB) BeginTx(fn TxFunc) error {
+func (db *DB) BeginTx(fn TxFunc) error {
 	// トランザクション開始済み（querierの実体が*sqlx.Tx）ならそのままクエリ実行
 	if _, ok := db.querier.(*sqlx.Tx); ok {
 		return fn(db)
@@ -102,7 +103,7 @@ func (db *MyDB) BeginTx(fn TxFunc) error {
 	// トランザクション開始前（querierの実体が*sqlx.DB）ならトランザクションを開始
 	sqlxDB, ok := db.querier.(*sqlx.DB)
 	if !ok {
-		return fmt.Errorf("invalid MyDB")
+		return fmt.Errorf("invalid DB")
 	}
 
 	tx, err := sqlxDB.Beginx()
@@ -113,7 +114,7 @@ func (db *MyDB) BeginTx(fn TxFunc) error {
 	return db.execTxFn(tx, fn)
 }
 
-func (db *MyDB) execTxFn(tx *sqlx.Tx, fn TxFunc) (err error) {
+func (db *DB) execTxFn(tx *sqlx.Tx, fn TxFunc) (err error) {
 	defer func() {
 		// recover() で panic を捕捉して制御を分ける
 		if r := recover(); r != nil {
@@ -153,19 +154,19 @@ func (db *MyDB) execTxFn(tx *sqlx.Tx, fn TxFunc) (err error) {
 		}
 	}()
 
-	txMyDB := &MyDB{
+	txDB := &DB{
 		querier:  tx, // *sqlx.DB ではなく *sqlx.Tx を利用してクエリを実行する
 		ctx:      db.ctx,
 		WarnTime: db.WarnTime,
 		WarnRows: db.WarnRows,
 	}
 
-	err = fn(txMyDB)
+	err = fn(txDB)
 
 	return
 }
 
-func (db *MyDB) execTxFnLess(tx *sqlx.Tx, fn TxFunc) (err error) {
+func (db *DB) execTxFnLess(tx *sqlx.Tx, fn TxFunc) (err error) {
 	defer func() {
 		if err != nil {
 			tx.Rollback()
@@ -174,17 +175,17 @@ func (db *MyDB) execTxFnLess(tx *sqlx.Tx, fn TxFunc) (err error) {
 		}
 	}()
 
-	txMyDB := &MyDB{
+	txDB := &DB{
 		querier: tx, // *sqlx.DB ではなく *sqlx.Tx を利用してクエリを実行する
 		ctx:     db.ctx,
 	}
 
-	err = fn(txMyDB)
+	err = fn(txDB)
 
 	return
 }
 
-func (db *MyDB) log(start time.Time, err error, query string, args []interface{}, count int) {
+func (db *DB) log(start time.Time, err error, query string, args []interface{}, count int) {
 
 }
 

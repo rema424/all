@@ -6,7 +6,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-func connectRedis() redis.Conn {
+// ConnectRedis ...
+func ConnectRedis() redis.Conn {
 	var (
 		host = mustGetenv("REDIS_HOST")
 		port = mustGetenv("REDIS_PORT")
