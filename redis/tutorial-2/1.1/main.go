@@ -14,7 +14,7 @@ func main() {
         </head>
         <body>
           チャットしましょう！
-        <body>
+        </body>
       </html>
     `))
 	})
