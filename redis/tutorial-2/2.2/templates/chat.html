@@ -18,6 +18,7 @@
   <ul id="messages"></ul>
   <h1>WebSocketを使ったチャットアプリケーション</h1>
   <form id="chatbox">
+    {{ .UserData.name }}:<br />
     <textarea name="" id="msgInput" cols="30" rows="10"></textarea>
     <input type="submit" value="送信">
   </form>
