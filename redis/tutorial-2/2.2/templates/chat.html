@@ -48,7 +48,8 @@
           return
         }
 
-        socket.send(msg)
+        // socket.send(msg)
+        socket.send(JSON.stringify({ "Message": msg }))
         messageInput.value = null
         e.preventDefault()
         return
@@ -65,9 +66,18 @@
         }
 
         socket.onmessage = e => {
-          const msgElm = document.createElement('li')
-          msgElm.textContent = e.data
-          messagesBox.appendChild(msgElm)
+          const msg = JSON.parse(e.data)
+          const li = document.createElement('li')
+
+          const strong = document.createElement('strong')
+          strong.textContent = msg.Name + ': '
+          li.appendChild(strong)
+
+          const span = document.createElement('span')
+          span.textContent = msg.Message
+          li.appendChild(span)
+
+          messagesBox.appendChild(li)
         }
       }
     })
