@@ -2,6 +2,9 @@ package model
 
 import "github.com/gorilla/websocket"
 
+// MessageBufferSize ...
+const MessageBufferSize = 256
+
 // Client はブラウザを初めとする端末を表します。
 // WebSocket のコネクションを持ちます。
 // 1人の User は複数の Client を持ちます。

@@ -5,5 +5,5 @@ type Room struct {
 	MessageCh chan *Message
 	JoinCh    chan *Client
 	LeaveCh   chan *Client
-	Clients   map[*Clients]bool
+	Clients   map[*Client]bool
 }
