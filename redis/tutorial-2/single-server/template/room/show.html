@@ -49,7 +49,7 @@
         }
 
         // socket.send(msg)
-        socket.send(JSON.stringify({ "Message": msg }))
+        socket.send(JSON.stringify({ "Body": msg }))
         messageInput.value = null
         e.preventDefault()
         return
@@ -59,13 +59,17 @@
       if (!window.WebSocket) {
         alert('エラー：WebSocketに対応していないブラウザです。')
       } else {
-        socket = new WebSocket('ws://{{Host}}/room')
+        const path = window.location.pathname.split("/")
+        const roomId = path[2]
+        const userId = path[3]
+        socket = new WebSocket(`ws://localhost:8080/rooms/${roomId}/${userId}/socket`)
 
         socket.onclose = () => {
           alert('接続が終了しました。')
         }
 
         socket.onmessage = e => {
+          console.log(e.data)
           const msg = JSON.parse(e.data)
           const li = document.createElement('li')
 
@@ -74,7 +78,7 @@
           li.appendChild(strong)
 
           const span = document.createElement('span')
-          span.textContent = msg.Message
+          span.textContent = msg.Body
           li.appendChild(span)
 
           messagesBox.appendChild(li)
