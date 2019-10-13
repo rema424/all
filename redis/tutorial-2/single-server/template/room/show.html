@@ -1,0 +1,87 @@
+<html>
+
+<head>
+  <title>チャット</title>
+  <style>
+    input {
+      display: block;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+  </style>
+</head>
+
+<body>
+  <ul id="messages"></ul>
+  <h1>WebSocketを使ったチャットアプリケーション</h1>
+  <form id="chatbox">
+    {{ Host }}:<br />
+    <textarea name="" id="msgInput" cols="30" rows="10"></textarea>
+    <input type="submit" value="送信">
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Element
+      const chatBox = document.querySelector('#chatbox')
+      const messageInput = document.querySelector('#msgInput')
+      const messagesBox = document.querySelector('#messages')
+
+      // Data
+      let socket
+
+      // Event
+      chatBox.addEventListener("submit", e => {
+        const msg = messageInput.value
+
+        if (!msg) {
+          e.preventDefault()
+          return
+        }
+
+        if (!socket) {
+          alert('エラー：WebSocket接続が行われていません。')
+          e.preventDefault()
+          return
+        }
+
+        // socket.send(msg)
+        socket.send(JSON.stringify({ "Message": msg }))
+        messageInput.value = null
+        e.preventDefault()
+        return
+      })
+
+      // Init
+      if (!window.WebSocket) {
+        alert('エラー：WebSocketに対応していないブラウザです。')
+      } else {
+        socket = new WebSocket('ws://{{Host}}/room')
+
+        socket.onclose = () => {
+          alert('接続が終了しました。')
+        }
+
+        socket.onmessage = e => {
+          const msg = JSON.parse(e.data)
+          const li = document.createElement('li')
+
+          const strong = document.createElement('strong')
+          strong.textContent = msg.Name + ': '
+          li.appendChild(strong)
+
+          const span = document.createElement('span')
+          span.textContent = msg.Message
+          li.appendChild(span)
+
+          messagesBox.appendChild(li)
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
