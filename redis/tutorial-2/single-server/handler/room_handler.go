@@ -12,7 +12,12 @@ import (
 
 // RoomIndexPage ...
 func RoomIndexPage(c echo.Context) error {
-	return nil
+	return render(c, "room/index.html", map[string]interface{}{})
+}
+
+// RoomShowPage2 ...
+func RoomShowPage2(c echo.Context) error {
+	return render(c, "room/show2.html", map[string]interface{}{})
 }
 
 // RoomShowPage ...

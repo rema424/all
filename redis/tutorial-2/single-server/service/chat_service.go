@@ -28,14 +28,14 @@ type client struct {
 	send   chan *model.Message
 	// room   *model.Room
 	// user   *model.User
-	roomMgr *roomMgr
-	userID  int
+	roomSpvr *roomSpvr
+	userID   int
 }
 
-type roomMgr struct {
-	roomID  int
-	once    sync.Once
-	mu      sync.RWMutex
+type roomSpvr struct {
+	roomID int
+	sync.Once
+	sync.RWMutex
 	writeCh chan *model.Message
 	joinCh  chan *client
 	leaveCh chan *client
@@ -43,70 +43,95 @@ type roomMgr struct {
 	clients map[*client]bool
 }
 
-type roomCache struct {
-	mu    sync.RWMutex
-	rooms map[int]*roomMgr
+var gRoomSpvrCache = &struct {
+	sync.RWMutex
+	roomSpvrs map[int]*roomSpvr
+}{
+	RWMutex:   sync.RWMutex{},
+	roomSpvrs: make(map[int]*roomSpvr),
 }
 
-var gRoomCache = &roomCache{
-	mu:    sync.RWMutex{},
-	rooms: make(map[int]*roomMgr),
-}
-var roomMgrPool sync.Pool
-
-// ConnectChatRoom ...
-func ConnectChatRoom(db *infra.DB, socket *websocket.Conn, roomID, userID int) {
-	// チャットルームに接続する
-	// ユーザーが入ろうとしている部屋へ参加資格があるかを確認する
-	roomMgr := getRoomMgr(roomID)
-
-	client := &client{
-		socket:  socket,
-		send:    make(chan *model.Message, model.MessageBufferSize),
-		roomMgr: roomMgr,
-		userID:  userID,
-	}
-
-	roomMgr.joinCh <- client
-	defer func() { roomMgr.leaveCh <- client }()
-
-	go client.publish()
-	client.subscribe()
-}
-
-func getRoomMgr(roomID int) *roomMgr {
-	// fmt.Println("roomID:", roomID, "- getRoomMgr() を開始しました。")
-	// defer fmt.Println("roomID:", roomID, "- getRoomMgr() を終了しました。")
-
-	var r *roomMgr
-
-	gRoomCache.mu.Lock()
-	if val, ok := gRoomCache.rooms[roomID]; ok {
-		fmt.Println("roomID:", roomID, "- roomをキャッシュから取得しました。")
-		r = val
-	} else {
-		fmt.Println("roomID:", roomID, "- roomを新規に作成します。")
-		r = &roomMgr{
-			roomID:  roomID,
+var roomSpvrPool = &sync.Pool{
+	New: func() interface{} {
+		return &roomSpvr{
+			roomID:  0,
+			Once:    sync.Once{},
+			RWMutex: sync.RWMutex{},
 			writeCh: make(chan *model.Message),
 			joinCh:  make(chan *client),
 			leaveCh: make(chan *client),
 			clients: make(map[*client]bool),
 			doneCh:  make(chan struct{}),
 		}
-		gRoomCache.rooms[roomID] = r
-	}
-	gRoomCache.mu.Unlock()
+	},
+}
 
-	r.once.Do(func() {
-		fmt.Println("roomID:", roomID, "- roomを起動します。")
-		go r.run()
-	})
+func newRoomSpvr(roomID int) *roomSpvr {
+	r := roomSpvrPool.New().(*roomSpvr)
+	r.roomID = roomID
+	return r
+}
+
+func releaseRoomSpvr(r *roomSpvr) {
+	r.Lock()
+	defer r.Unlock()
+
+	close(r.doneCh)
+	close(r.writeCh)
+	close(r.joinCh)
+	close(r.leaveCh)
+
+	r.roomID = 0
+	r.Once = sync.Once{}
+	r.doneCh = make(chan struct{})
+	r.writeCh = make(chan *model.Message)
+	r.joinCh = make(chan *client)
+	r.leaveCh = make(chan *client)
+	r.clients = make(map[*client]bool)
+
+	roomSpvrPool.Put(r)
+}
+
+// ConnectChatRoom ...
+func ConnectChatRoom(db *infra.DB, socket *websocket.Conn, roomID, userID int) {
+	// チャットルームに接続する
+	// ユーザーが入ろうとしている部屋へ参加資格があるかを確認する
+	roomSpvr := getRoomSpvr(roomID)
+	roomSpvr.Once.Do(func() { go roomSpvr.run() })
+
+	client := &client{
+		socket:   socket,
+		send:     make(chan *model.Message, model.MessageBufferSize),
+		roomSpvr: roomSpvr,
+		userID:   userID,
+	}
+
+	roomSpvr.joinCh <- client
+	defer func() { roomSpvr.leaveCh <- client }()
+
+	go client.publish()
+	client.subscribe()
+}
+
+func getRoomSpvr(roomID int) *roomSpvr {
+	gRoomSpvrCache.Lock()
+	defer gRoomSpvrCache.Unlock()
+
+	var r *roomSpvr
+
+	if val, ok := gRoomSpvrCache.roomSpvrs[roomID]; ok {
+		fmt.Println("roomID:", roomID, "- roomをキャッシュから取得しました。")
+		r = val
+	} else {
+		fmt.Println("roomID:", roomID, "- roomを新規に作成します。")
+		r = newRoomSpvr(roomID)
+		gRoomSpvrCache.roomSpvrs[roomID] = r
+	}
 
 	return r
 }
 
-func (r *roomMgr) run() {
+func (r *roomSpvr) run() {
 	fmt.Println("roomID:", r.roomID, "- run()を開始します。")
 	defer fmt.Println("roomID:", r.roomID, "- run()を終了します。")
 
@@ -122,7 +147,7 @@ func (r *roomMgr) run() {
 						close(client.send)
 					}
 					close(r.doneCh)
-					delete(gRoomCache.rooms, r.roomID)
+					delete(gRoomSpvrCache.roomSpvrs, r.roomID)
 					break L
 				}
 			}
@@ -159,9 +184,9 @@ L:
 	}
 }
 
-func (r *roomMgr) describe() {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+func (r *roomSpvr) describe() {
+	r.RLock()
+	defer r.RUnlock()
 
 	userIDs := make([]string, 0, len(r.clients))
 	for client := range r.clients {
@@ -182,7 +207,7 @@ func (c *client) subscribe() {
 		var msg *model.Message
 		if err := c.socket.ReadJSON(&msg); err == nil {
 			msg.When = time.Now()
-			c.roomMgr.writeCh <- msg
+			c.roomSpvr.writeCh <- msg
 		} else {
 			break
 		}
@@ -208,7 +233,7 @@ func (c *client) publish() {
 // 		fmt.Println("Userの取得に失敗しました：", user, "-", err)
 // 	}
 
-// 	roomMgr, err := NewRoomManager(db, roomID, userID)
+// 	roomSpvr, err := NewRoomManager(db, roomID, userID)
 
 // 	if err != nil {
 // 		fmt.Println("Roomの取得に失敗しました：", room, "-", err)

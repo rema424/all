@@ -14,7 +14,11 @@ var e = infra.CreateMux()
 
 func init() {
 
-	e.GET("/", handler.HelloHandler)
+	e.GET("/", handler.TopHandler)
+	e.GET("/signup", handler.SignUpPage)
+	e.GET("/signin", handler.LoginPage)
+	e.GET("/rooms", handler.RoomIndexPage)
+	e.GET("/rooms/:roomID", handler.RoomShowPage2)
 	e.GET("/rooms/:roomID/:userID", handler.RoomShowPage)
 	e.GET("/rooms/:roomID/:userID/socket", handler.RoomShowWebSocket)
 }
