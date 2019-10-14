@@ -32,6 +32,12 @@ type client struct {
 	userID   int
 }
 
+var clientPool = &sync.Pool{
+	New: func() interface{} {
+		return newRoomSpvr
+	},
+}
+
 type roomSpvr struct {
 	roomID int
 	sync.Once
