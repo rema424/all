@@ -137,6 +137,14 @@ func (r *roomSpvr) close() {
 	roomSpvrPool.Put(r)
 }
 
+func (r *roomSpvr) welcome(c *client) {
+
+}
+
+func (r *roomSpvr) bye(c *client) {
+
+}
+
 // ConnectChatRoom ...
 func ConnectChatRoom(db *infra.DB, socket *websocket.Conn, roomID, userID int) {
 	// チャットルームに接続する
