@@ -24,6 +24,7 @@ import (
 const messageBufferSize = 256
 
 type client struct {
+	mu     sync.RWMutex
 	socket *websocket.Conn
 	send   chan *model.Message
 	// room   *model.Room
@@ -34,8 +35,41 @@ type client struct {
 
 var clientPool = &sync.Pool{
 	New: func() interface{} {
-		return newRoomSpvr
+		return &client{
+			send: make(chan *model.Message, model.MessageBufferSize),
+		}
 	},
+}
+
+func newClient(socket *websocket.Conn, roomSpvr *roomSpvr, userID int) *client {
+	client := clientPool.Get().(*client)
+	client.socket = socket
+	client.roomSpvr = roomSpvr
+	client.userID = userID
+	return client
+}
+
+func (c *client) join(r *roomSpvr) {
+	r.joinCh <- c
+}
+
+func (c *client) leave(r *roomSpvr) {
+	r.leaveCh <- c
+}
+
+func (c *client) close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.socket.Close()
+	close(c.send)
+
+	c.socket = nil
+	c.send = nil
+	c.roomSpvr = nil
+	c.userID = 0
+
+	clientPool.Put(c)
 }
 
 type roomSpvr struct {
@@ -59,6 +93,7 @@ var gRoomSpvrCache = &struct {
 
 var roomSpvrPool = &sync.Pool{
 	New: func() interface{} {
+		fmt.Println("Poolに部屋がありません。新規に追加します。")
 		return &roomSpvr{
 			roomID:  0,
 			Once:    sync.Once{},
@@ -73,14 +108,18 @@ var roomSpvrPool = &sync.Pool{
 }
 
 func newRoomSpvr(roomID int) *roomSpvr {
-	r := roomSpvrPool.New().(*roomSpvr)
+	r := roomSpvrPool.Get().(*roomSpvr)
 	r.roomID = roomID
 	return r
 }
 
-func releaseRoomSpvr(r *roomSpvr) {
+func (r *roomSpvr) close() {
 	r.Lock()
+	gRoomSpvrCache.Lock()
 	defer r.Unlock()
+	defer gRoomSpvrCache.Unlock()
+
+	delete(gRoomSpvrCache.roomSpvrs, r.roomID)
 
 	close(r.doneCh)
 	close(r.writeCh)
@@ -105,15 +144,9 @@ func ConnectChatRoom(db *infra.DB, socket *websocket.Conn, roomID, userID int) {
 	roomSpvr := getRoomSpvr(roomID)
 	roomSpvr.Once.Do(func() { go roomSpvr.run() })
 
-	client := &client{
-		socket:   socket,
-		send:     make(chan *model.Message, model.MessageBufferSize),
-		roomSpvr: roomSpvr,
-		userID:   userID,
-	}
-
-	roomSpvr.joinCh <- client
-	defer func() { roomSpvr.leaveCh <- client }()
+	client := newClient(socket, roomSpvr, userID)
+	client.join(roomSpvr)
+	defer func() { client.leave(roomSpvr) }()
 
 	go client.publish()
 	client.subscribe()
@@ -140,9 +173,10 @@ func getRoomSpvr(roomID int) *roomSpvr {
 func (r *roomSpvr) run() {
 	fmt.Println("roomID:", r.roomID, "- run()を開始します。")
 	defer fmt.Println("roomID:", r.roomID, "- run()を終了します。")
+	defer r.close()
 
 	go func() {
-	L:
+	loop:
 		for {
 			select {
 			case <-time.Tick(10 * time.Second):
@@ -150,17 +184,16 @@ func (r *roomSpvr) run() {
 				if len(r.clients) == 0 {
 					fmt.Println("roomID:", r.roomID, "- 参加者が0人です。部屋の監視を停止します。")
 					for client := range r.clients {
-						close(client.send)
+						client.close()
 					}
-					close(r.doneCh)
-					delete(gRoomSpvrCache.roomSpvrs, r.roomID)
-					break L
+					r.close()
+					break loop
 				}
 			}
 		}
 	}()
 
-L:
+loop:
 	for {
 		select {
 		case client := <-r.joinCh:
@@ -185,7 +218,7 @@ L:
 				}
 			}
 		case <-r.doneCh:
-			break L
+			break loop
 		}
 	}
 }
