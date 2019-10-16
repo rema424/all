@@ -62,7 +62,7 @@ func (c *client) close() {
 	defer c.mu.Unlock()
 
 	c.socket.Close()
-	close(c.send)
+	// close(c.send)
 
 	c.socket = nil
 	c.send = nil
@@ -122,9 +122,9 @@ func (r *roomSpvr) close() {
 	delete(gRoomSpvrCache.roomSpvrs, r.roomID)
 
 	close(r.doneCh)
-	close(r.writeCh)
-	close(r.joinCh)
-	close(r.leaveCh)
+	// close(r.writeCh)
+	// close(r.joinCh)
+	// close(r.leaveCh)
 
 	r.roomID = 0
 	r.Once = sync.Once{}
@@ -211,7 +211,7 @@ loop:
 		case client := <-r.leaveCh:
 			delete(r.clients, client)
 			close(client.send)
-			fmt.Println("roomID:", r.roomID, "- userID:", client.userID, "が退室しました")
+			// fmt.Println("roomID:", r.roomID, "- userID:", client.userID, "が退室しました")
 			r.describe()
 		case msg := <-r.writeCh:
 			fmt.Printf("メッセージを受信しました\n")
