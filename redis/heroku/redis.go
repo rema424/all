@@ -139,3 +139,42 @@ func removeConn(conns []*websocket.Conn, remove *websocket.Conn) []*websocket.Co
 	conns[len(conns)-1] = nil    // nil last element
 	return conns[:len(conns)-1]  // truncate slice
 }
+
+type redisWriter struct {
+	pool     *redis.Pool
+	messages chan []byte
+}
+
+func newRedisWriter(pool *redis.Pool) redisWriter {
+	return redisWriter{
+		pool:     pool,
+		messages: make(chan []byte, 10000),
+	}
+}
+
+func (rw *redisWriter) run() error {
+	conn := rw.pool.Get()
+	defer conn.Close()
+
+	for data := range rw.messages {
+		if err := writeToRedis(conn, data); err != nil {
+			rw.publish(data)
+			return err
+		}
+	}
+	return nil
+}
+
+func writeToRedis(conn redis.Conn, data []byte) error {
+	if err := conn.Send("PUBLISH", Channel, data); err != nil {
+		return errors.Wrap(err, "Unable to publish message to Redis")
+	}
+	if err := conn.Flush(); err != nil {
+		return errors.Wrap(err, "Unable to flush published message to Redis")
+	}
+	return nil
+}
+
+func (rw *redisWriter) publish(data []byte) {
+	rw.messages <- data
+}
