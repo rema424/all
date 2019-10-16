@@ -6,9 +6,9 @@ require (
 	github.com/clbanning/x2j v0.0.0-20180326210544-5e605d46809c // indirect
 	github.com/flosch/pongo2 v0.0.0-20190707114632-bbf5a6c351f4 // indirect
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/websocket v1.4.1 // indirect
+	github.com/gorilla/websocket v1.4.1
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.1.10
