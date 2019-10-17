@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -151,11 +153,62 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Room ...
+type Room struct {
+	roomID      int
+	once        sync.Once
+	doneCh      chan struct{}
+	newClientCh chan *Client
+	rmClientCh  chan *Client
+	msgCh       chan []byte
+	Clients     map[*Client]bool
+}
+
+// Client ...
+type Client struct {
+	socket *websocket.Conn
+}
+
+var roomCache = map[int]*Room{}
+
 // /rooms/{roomID}
 func roomHandler(w http.ResponseWriter, r *http.Request) {
 	segs := strings.Split(r.URL.Path, "/")
 	// ルームを準備する
-	roomID := segs[2]
+	roomID, _ := strconv.Atoi(segs[2])
+	var room *Room
+	if val, ok := roomCache[roomID]; ok {
+		room = val
+	} else {
+		room = &Room{roomID: roomID}
+	}
+
+	// run()
+	room.once.Do(func() {
+		go func() {
+		loop:
+			for {
+				select {
+				case <-room.doneCh:
+					delete(roomCache, roomID)
+					for client := range room.Clients {
+						client.socket.Close()
+					}
+					break loop
+				case client := <-room.newClientCh:
+					room.Clients[client] = true
+				case client := <-room.rmClientCh:
+					delete(room.Clients, client)
+				case msg := <-room.msgCh:
+					if c := redisPool.Get(); c != nil {
+						c.Do("PUBLISH", room.roomID)
+						c.Close()
+					}
+					fmt.Println(msg)
+				}
+			}
+		}()
+	})
 
 	// クライアントを準備する
 	socket, err := upgrader.Upgrade(w, r, nil)
@@ -163,6 +216,22 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("upgrader error %s\n", err.Error())
 		return
 	}
+	client := &Client{socket: socket}
+
+	// registerClient()
+	func() {
+		room.newClientCh <- client
+	}()
+
+	// deRegisterClient()
+	defer func() {
+		room.rmClientCh <- client
+	}()
+
+	// messageClientToServer()
+
+	// messageServerToClients()
+
 	u := cache.newUser(socket)
 	// u := cache.newUser(socket, r.FormValue("id"))
 	log.Printf("user %s joined\n", u.ID)
