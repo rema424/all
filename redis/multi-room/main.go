@@ -156,6 +156,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 // Room ...
 type Room struct {
 	roomID      int
+	psc         *redis.PubSubConn
 	once        sync.Once
 	doneCh      chan struct{}
 	newClientCh chan *Client
@@ -201,7 +202,7 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 					delete(room.Clients, client)
 				case msg := <-room.msgCh:
 					if c := redisPool.Get(); c != nil {
-						c.Do("PUBLISH", room.roomID)
+						c.Do("PUBLISH", room.roomID, msg)
 						c.Close()
 					}
 					fmt.Println(msg)
@@ -228,9 +229,24 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 		room.rmClientCh <- client
 	}()
 
-	// messageClientToServer()
-
 	// messageServerToClients()
+	go func() {
+		for {
+
+		}
+	}()
+
+	// messageClientToServer()
+	func() {
+		for {
+			if _, msg, err := client.socket.ReadMessage(); err == nil {
+				room.msgCh <- msg
+			} else {
+				break
+			}
+		}
+		client.socket.Close()
+	}()
 
 	u := cache.newUser(socket)
 	// u := cache.newUser(socket, r.FormValue("id"))
