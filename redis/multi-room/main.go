@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -136,6 +137,37 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	u := cache.newUser(socket)
 	// u := cache.newUser(socket, r.FormValue("id"))
 	log.Printf("user %s joined\n", u.ID)
+
+	for {
+		var m Message
+
+		if err := u.socket.ReadJSON(&m); err != nil {
+			log.Printf("error on ws. message %s\n", err.Error())
+		}
+
+		if c := redisPool.Get(); c != nil {
+			c.Do("PUBLISH", m.DeliveryID, string(m.Content))
+		}
+	}
+}
+
+// /rooms/{roomID}
+func roomHandler(w http.ResponseWriter, r *http.Request) {
+	segs := strings.Split(r.URL.Path, "/")
+	// ルームを準備する
+	roomID := segs[2]
+
+	// クライアントを準備する
+	socket, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("upgrader error %s\n", err.Error())
+		return
+	}
+	u := cache.newUser(socket)
+	// u := cache.newUser(socket, r.FormValue("id"))
+	log.Printf("user %s joined\n", u.ID)
+
+	// ルームはクライアントを登録する
 
 	for {
 		var m Message
