@@ -11,122 +11,20 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
-// User ...
-type User struct {
-	ID     string
-	socket *websocket.Conn
-}
-
-// Cache ...
-type Cache struct {
-	Users []*User
-	sync.Mutex
-}
-
-// Message ...
-type Message struct {
-	DeliveryID string `json:"id"`
-	Content    string `json:"content"`
-}
-
-var (
-	cache     *Cache
-	pubSub    *redis.PubSubConn
-	redisPool = &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", ":6379") },
-		// Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("REDIS_URL")) },
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			if time.Since(t) < time.Minute {
-				return nil
-			}
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-)
-
-func init() {
-	cache = &Cache{
-		Users: make([]*User, 0, 1),
-	}
-}
-
-var serverAddress = ":3000"
-
-// func (c *Cache) newUser(socket *websocket.Conn, id string) *User {
-func (c *Cache) newUser(socket *websocket.Conn) *User {
-	u := &User{
-		// ID:     id,
-		ID:     uuid.New().String(),
-		socket: socket,
-	}
-
-	if err := pubSub.Subscribe(u.ID); err != nil {
-		panic(err)
-	}
-	c.Lock()
-	defer c.Unlock()
-
-	c.Users = append(c.Users, u)
-	return u
-}
-
-func main() {
-	port := flag.String("port", ":3000", "アプリケーションのアドレス")
-	flag.Parse()
-
-	redisConn := redisPool.Get()
-	defer redisConn.Close()
-
-	pubSub = &redis.PubSubConn{Conn: redisConn}
-	defer pubSub.Close()
-
-	go deliverMessage()
-
-	http.HandleFunc("/ws", wsHandler)
-	http.HandleFunc("/rooms/", roomHandler)
-
-	log.Printf("server started at %s\n", *port)
-	log.Fatal(http.ListenAndServe("localhost:"+*port, nil))
-}
-
-func deliverMessage() {
-	for {
-		switch v := pubSub.Receive().(type) {
-		case redis.Message:
-			cache.findAndDeliver(v.Channel, string(v.Data))
-		case redis.Subscription:
-			log.Printf("subscription message: %s: %s %d\n", v.Channel, v.Kind, v.Count)
-		case error:
-			log.Printf("error pub/sub on connection, delivery has stopped")
-			return
+var redisPool = &redis.Pool{
+	MaxIdle:     3,
+	IdleTimeout: 240 * time.Second,
+	Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", ":6379") },
+	TestOnBorrow: func(c redis.Conn, t time.Time) error {
+		if time.Since(t) < time.Minute {
+			return nil
 		}
-	}
-}
-
-func (c *Cache) findAndDeliver(userID string, content string) {
-	m := Message{
-		Content: content,
-	}
-
-	for _, u := range c.Users {
-		if u.ID == userID {
-			if err := u.socket.WriteJSON(m); err != nil {
-				log.Printf("error on message delivery through ws. e: %s\n", err)
-			} else {
-				log.Printf("user %s found at our store, message sent\n", userID)
-			}
-			return
-		}
-	}
-
-	log.Printf("user %s not found at our store\n", userID)
+		_, err := c.Do("PING")
+		return err
+	},
 }
 
 var upgrader = websocket.Upgrader{
@@ -135,27 +33,14 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func wsHandler(w http.ResponseWriter, r *http.Request) {
-	socket, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("upgrader error %s\n", err.Error())
-		return
-	}
-	u := cache.newUser(socket)
-	// u := cache.newUser(socket, r.FormValue("id"))
-	log.Printf("user %s joined\n", u.ID)
+func main() {
+	port := flag.String("port", ":3000", "アプリケーションのアドレス")
+	flag.Parse()
 
-	for {
-		var m Message
+	http.HandleFunc("/rooms/", roomHandler)
 
-		if err := u.socket.ReadJSON(&m); err != nil {
-			log.Printf("error on ws. message %s\n", err.Error())
-		}
-
-		if c := redisPool.Get(); c != nil {
-			c.Do("PUBLISH", m.DeliveryID, string(m.Content))
-		}
-	}
+	log.Printf("server started at %s\n", *port)
+	log.Fatal(http.ListenAndServe("localhost:"+*port, nil))
 }
 
 // Room ...
@@ -184,8 +69,10 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 	roomID, _ := strconv.Atoi(segs[2])
 	var room *Room
 	if val, ok := roomCache[roomID]; ok {
+		fmt.Println("キャッシュから部屋インスタンスを取得しました。")
 		room = val
 	} else {
+		fmt.Printf("部屋ID: %d のインスタンスを新たに作成しました。\n", roomID)
 		room = &Room{
 			roomID:      roomID,
 			doneCh:      make(chan struct{}),
@@ -199,7 +86,6 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// run()
 	room.once.Do(func() {
-		fmt.Println("room.once.Do")
 		go func() {
 			c := redisPool.Get()
 			defer c.Close()
@@ -207,7 +93,9 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 			defer psc.Close()
 
 			go func() {
-				fmt.Println("psc")
+				fmt.Printf("Redisによる部屋ID: %d の購読を開始します。\n", room.roomID)
+				defer fmt.Printf("Redisによる部屋ID: %d の購読を終了します。\n", room.roomID)
+
 				psc.Subscribe(room.roomID)
 				for {
 					switch v := psc.Receive().(type) {
@@ -224,33 +112,29 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}()
 
-			fmt.Println("room")
-		loop:
+			fmt.Printf("部屋ID: %d の監視を開始します。\n", roomID)
+			defer fmt.Printf("部屋ID: %d の監視を終了。\n", roomID)
 			for {
 				select {
 				case <-room.doneCh:
-					fmt.Println("room.doneCh")
+					fmt.Printf("部屋ID: %d に閉鎖の通知が届きました。\n", roomID)
 					delete(roomCache, roomID)
 					for client := range room.Clients {
 						client.socket.Close()
 					}
-					break loop
+					return
 				case client := <-room.newClientCh:
-					fmt.Println("room.newClientCh")
-
+					fmt.Printf("部屋ID: %d に入室の通知が届きました。\n", roomID)
 					room.Clients[client] = true
 				case client := <-room.rmClientCh:
-					fmt.Println("room.rmClientCh")
-
+					fmt.Printf("部屋ID: %d に退室の通知が届きました。\n", roomID)
 					delete(room.Clients, client)
 				case msg := <-room.msgCh:
-					fmt.Println("room.msgCh")
-
+					fmt.Printf("部屋ID: %d へメッセージを送信します。\n", roomID)
 					if c := redisPool.Get(); c != nil {
 						c.Do("PUBLISH", room.roomID, msg)
 						c.Close()
 					}
-					// fmt.Println(msg)
 				}
 			}
 		}()
@@ -266,21 +150,19 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// registerClient()
 	func() {
-		fmt.Println("registerClient")
+		fmt.Printf("部屋ID: %d へ入室します。\n", roomID)
 		room.newClientCh <- client
-		fmt.Println("registeredClient")
 	}()
 
 	// deRegisterClient()
 	defer func() {
-		fmt.Println("deRegisterClient")
+		fmt.Printf("部屋ID: %d から退室します。\n", roomID)
 		room.rmClientCh <- client
 	}()
 
 	// messageServerToClients()
 	go func() {
-		fmt.Println("messageServerToClients")
-
+		fmt.Printf("部屋ID: %d: ブラウザへメッセージを送信する準備をします。\n", roomID)
 		for {
 
 		}
@@ -288,35 +170,16 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// messageClientToServer()
 	func() {
-		fmt.Println("messageClientToServer")
+		fmt.Printf("部屋ID: %d: ブラウザからメッセージを受信する準備をします。\n", roomID)
 		for {
 			if _, msg, err := client.socket.ReadMessage(); err == nil {
+				fmt.Printf("部屋ID: %d: ブラウザからメッセージを受信しました。\n", roomID)
 				room.msgCh <- msg
 			} else {
 				break
 			}
 		}
 		client.socket.Close()
-		fmt.Println("client close")
+		fmt.Println("ブラウザとの接続が切れました。")
 	}()
-
-	fmt.Println("a")
-
-	// u := cache.newUser(socket)
-	// // u := cache.newUser(socket, r.FormValue("id"))
-	// log.Printf("user %s joined\n", u.ID)
-
-	// // ルームはクライアントを登録する
-
-	// for {
-	// 	var m Message
-
-	// 	if err := u.socket.ReadJSON(&m); err != nil {
-	// 		log.Printf("error on ws. message %s\n", err.Error())
-	// 	}
-
-	// 	if c := redisPool.Get(); c != nil {
-	// 		c.Do("PUBLISH", m.DeliveryID, string(m.Content))
-	// 	}
-	// }
 }
