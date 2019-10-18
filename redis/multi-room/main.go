@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -77,6 +78,9 @@ func (c *Cache) newUser(socket *websocket.Conn) *User {
 }
 
 func main() {
+	port := flag.String("port", ":3000", "アプリケーションのアドレス")
+	flag.Parse()
+
 	redisConn := redisPool.Get()
 	defer redisConn.Close()
 
@@ -86,9 +90,10 @@ func main() {
 	go deliverMessage()
 
 	http.HandleFunc("/ws", wsHandler)
+	http.HandleFunc("/rooms/", roomHandler)
 
-	log.Printf("server started at %s\n", serverAddress)
-	log.Fatal(http.ListenAndServe(serverAddress, nil))
+	log.Printf("server started at %s\n", *port)
+	log.Fatal(http.ListenAndServe("localhost:"+*port, nil))
 }
 
 func deliverMessage() {
@@ -181,31 +186,71 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 	if val, ok := roomCache[roomID]; ok {
 		room = val
 	} else {
-		room = &Room{roomID: roomID}
+		room = &Room{
+			roomID:      roomID,
+			doneCh:      make(chan struct{}),
+			newClientCh: make(chan *Client),
+			rmClientCh:  make(chan *Client),
+			msgCh:       make(chan []byte),
+			Clients:     make(map[*Client]bool),
+		}
+		roomCache[roomID] = room
 	}
 
 	// run()
 	room.once.Do(func() {
+		fmt.Println("room.once.Do")
 		go func() {
+			c := redisPool.Get()
+			defer c.Close()
+			psc := redis.PubSubConn{Conn: c}
+			defer psc.Close()
+
+			go func() {
+				fmt.Println("psc")
+				psc.Subscribe(room.roomID)
+				for {
+					switch v := psc.Receive().(type) {
+					case redis.Message:
+						fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
+					case redis.Subscription:
+						fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+					case error:
+						fmt.Println("close psc")
+
+						close(room.doneCh)
+						return
+					}
+				}
+			}()
+
+			fmt.Println("room")
 		loop:
 			for {
 				select {
 				case <-room.doneCh:
+					fmt.Println("room.doneCh")
 					delete(roomCache, roomID)
 					for client := range room.Clients {
 						client.socket.Close()
 					}
 					break loop
 				case client := <-room.newClientCh:
+					fmt.Println("room.newClientCh")
+
 					room.Clients[client] = true
 				case client := <-room.rmClientCh:
+					fmt.Println("room.rmClientCh")
+
 					delete(room.Clients, client)
 				case msg := <-room.msgCh:
+					fmt.Println("room.msgCh")
+
 					if c := redisPool.Get(); c != nil {
 						c.Do("PUBLISH", room.roomID, msg)
 						c.Close()
 					}
-					fmt.Println(msg)
+					// fmt.Println(msg)
 				}
 			}
 		}()
@@ -221,16 +266,21 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// registerClient()
 	func() {
+		fmt.Println("registerClient")
 		room.newClientCh <- client
+		fmt.Println("registeredClient")
 	}()
 
 	// deRegisterClient()
 	defer func() {
+		fmt.Println("deRegisterClient")
 		room.rmClientCh <- client
 	}()
 
 	// messageServerToClients()
 	go func() {
+		fmt.Println("messageServerToClients")
+
 		for {
 
 		}
@@ -238,6 +288,7 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 
 	// messageClientToServer()
 	func() {
+		fmt.Println("messageClientToServer")
 		for {
 			if _, msg, err := client.socket.ReadMessage(); err == nil {
 				room.msgCh <- msg
@@ -246,23 +297,26 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		client.socket.Close()
+		fmt.Println("client close")
 	}()
 
-	u := cache.newUser(socket)
-	// u := cache.newUser(socket, r.FormValue("id"))
-	log.Printf("user %s joined\n", u.ID)
+	fmt.Println("a")
 
-	// ルームはクライアントを登録する
+	// u := cache.newUser(socket)
+	// // u := cache.newUser(socket, r.FormValue("id"))
+	// log.Printf("user %s joined\n", u.ID)
 
-	for {
-		var m Message
+	// // ルームはクライアントを登録する
 
-		if err := u.socket.ReadJSON(&m); err != nil {
-			log.Printf("error on ws. message %s\n", err.Error())
-		}
+	// for {
+	// 	var m Message
 
-		if c := redisPool.Get(); c != nil {
-			c.Do("PUBLISH", m.DeliveryID, string(m.Content))
-		}
-	}
+	// 	if err := u.socket.ReadJSON(&m); err != nil {
+	// 		log.Printf("error on ws. message %s\n", err.Error())
+	// 	}
+
+	// 	if c := redisPool.Get(); c != nil {
+	// 		c.Do("PUBLISH", m.DeliveryID, string(m.Content))
+	// 	}
+	// }
 }
