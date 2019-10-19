@@ -74,4 +74,27 @@ document.addEventListener('DOMContentLoaded', () => {
       addMsgElm(msg);
     };
   }
+
+  let timerId;
+  let topMsgClass = 'b';
+
+  const handler = e => {
+    if (timerId) {
+      return;
+    }
+    timerId = setTimeout(() => {
+      timerId = 0;
+    }, 500);
+    const target = document.querySelector(`.${topMsgClass}`).getBoundingClientRect().bottom;
+    if (0 < target) {
+      console.log('scroll in', topMsgClass);
+      if (topMsgClass == 'a') {
+        window.removeEventListener('scroll', handler);
+      } else {
+        topMsgClass = 'a';
+      }
+    }
+  };
+
+  window.addEventListener('scroll', handler, { passive: true });
 });
