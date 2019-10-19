@@ -6,12 +6,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 var redisPool = &redis.Pool{
@@ -33,14 +34,27 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var e = createMux()
+
+func init() {
+	e.GET("/rooms/:roomID", roomHandler)
+}
+
 func main() {
-	port := flag.String("port", ":3000", "アプリケーションのアドレス")
+	port := flag.String("port", "3000", "アプリケーションのアドレス")
 	flag.Parse()
 
-	http.HandleFunc("/rooms/", roomHandler)
-
+	// http.HandleFunc("/rooms/", roomHandler)
+	http.Handle("/", e)
 	log.Printf("server started at %s\n", *port)
 	log.Fatal(http.ListenAndServe("localhost:"+*port, nil))
+}
+
+func createMux() *echo.Echo {
+	e := echo.New()
+	e.Use(middleware.Recover())
+	e.Use(middleware.Gzip())
+	return e
 }
 
 // Room ...
@@ -63,16 +77,16 @@ type Client struct {
 var roomCache = map[int]*Room{}
 
 // /rooms/{roomID}
-func roomHandler(w http.ResponseWriter, r *http.Request) {
-	segs := strings.Split(r.URL.Path, "/")
+func roomHandler(c echo.Context) error {
+	defer fmt.Println("リクエストの処理を終了します。")
 	// ルームを準備する
-	roomID, _ := strconv.Atoi(segs[2])
+	roomID, _ := strconv.Atoi(c.Param("roomID"))
 	var room *Room
 	if val, ok := roomCache[roomID]; ok {
-		fmt.Println("キャッシュから部屋インスタンスを取得しました。")
+		fmt.Printf("部屋ID: %d: キャッシュから部屋インスタンスを取得しました。\n", roomID)
 		room = val
 	} else {
-		fmt.Printf("部屋ID: %d のインスタンスを新たに作成しました。\n", roomID)
+		fmt.Printf("部屋ID: %d: 部屋インスタンスを新たに作成しました。\n", roomID)
 		room = &Room{
 			roomID:      roomID,
 			doneCh:      make(chan struct{}),
@@ -93,44 +107,46 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 			defer psc.Close()
 
 			go func() {
-				fmt.Printf("Redisによる部屋ID: %d の購読を開始します。\n", room.roomID)
-				defer fmt.Printf("Redisによる部屋ID: %d の購読を終了します。\n", room.roomID)
+				fmt.Printf("部屋ID: %d: Redisの購読を開始します。\n", room.roomID)
+				defer fmt.Printf("部屋ID: %d: Redisの購読を終了します。\n", room.roomID)
 
 				psc.Subscribe(room.roomID)
 				for {
 					switch v := psc.Receive().(type) {
 					case redis.Message:
+						fmt.Printf("部屋ID: %d: Redisからメッセージが届きました。クライアントに転送します。\n", room.roomID)
 						fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
 					case redis.Subscription:
+						fmt.Printf("部屋ID: %d: Redisから購読開始通知が届きました。\n", room.roomID)
 						fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 					case error:
+						fmt.Printf("部屋ID: %d: Redisの購読エラーです。%v\n", room.roomID, v.Error())
 						fmt.Println("close psc")
-
 						close(room.doneCh)
 						return
 					}
 				}
 			}()
 
-			fmt.Printf("部屋ID: %d の監視を開始します。\n", roomID)
-			defer fmt.Printf("部屋ID: %d の監視を終了。\n", roomID)
+			fmt.Printf("部屋ID: %d: 部屋の監視を開始します。\n", roomID)
+			defer fmt.Printf("部屋ID: %d: 部屋の監視を終了します。\n", roomID)
 			for {
 				select {
 				case <-room.doneCh:
-					fmt.Printf("部屋ID: %d に閉鎖の通知が届きました。\n", roomID)
+					fmt.Printf("部屋ID: %d: 部屋の閉鎖通知が届きました。\n", roomID)
 					delete(roomCache, roomID)
 					for client := range room.Clients {
 						client.socket.Close()
 					}
 					return
 				case client := <-room.newClientCh:
-					fmt.Printf("部屋ID: %d に入室の通知が届きました。\n", roomID)
+					fmt.Printf("部屋ID: %d: 入室の通知が届きました。\n", roomID)
 					room.Clients[client] = true
 				case client := <-room.rmClientCh:
-					fmt.Printf("部屋ID: %d に退室の通知が届きました。\n", roomID)
+					fmt.Printf("部屋ID: %d: 退室の通知が届きました。\n", roomID)
 					delete(room.Clients, client)
 				case msg := <-room.msgCh:
-					fmt.Printf("部屋ID: %d へメッセージを送信します。\n", roomID)
+					fmt.Printf("部屋ID: %d: 部屋にメッセージが届きました。Redisに転送します。\n", roomID)
 					if c := redisPool.Get(); c != nil {
 						c.Do("PUBLISH", room.roomID, msg)
 						c.Close()
@@ -141,22 +157,22 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// クライアントを準備する
-	socket, err := upgrader.Upgrade(w, r, nil)
+	socket, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		log.Printf("upgrader error %s\n", err.Error())
-		return
+		return nil
 	}
 	client := &Client{socket: socket}
 
 	// registerClient()
 	func() {
-		fmt.Printf("部屋ID: %d へ入室します。\n", roomID)
+		fmt.Printf("部屋ID: %d: 入室します。\n", roomID)
 		room.newClientCh <- client
 	}()
 
 	// deRegisterClient()
 	defer func() {
-		fmt.Printf("部屋ID: %d から退室します。\n", roomID)
+		fmt.Printf("部屋ID: %d: 退室します。\n", roomID)
 		room.rmClientCh <- client
 	}()
 
@@ -182,4 +198,5 @@ func roomHandler(w http.ResponseWriter, r *http.Request) {
 		client.socket.Close()
 		fmt.Println("ブラウザとの接続が切れました。")
 	}()
+	return nil
 }
