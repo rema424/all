@@ -42,7 +42,9 @@ func init() {
 	e.Static("/js", "src/js")
 
 	// HTML
-	e.GET("/rooms/:roomID", roomShow)
+	e.GET("/rooms/:roomID", roomShowHandler)
+	e.GET("/login", loginHandler)
+	e.GET("/signup", signupHandler)
 
 	// API
 
@@ -84,11 +86,18 @@ func render(c echo.Context, file string, data map[string]interface{}) error {
 	return c.HTMLBlob(http.StatusOK, b)
 }
 
-func roomShow(c echo.Context) error {
+func roomShowHandler(c echo.Context) error {
 	roomID := c.Param("roomID")
 	return render(c, "room/show.html", map[string]interface{}{
 		"RoomID": roomID,
 	})
+}
+func loginHandler(c echo.Context) error {
+	return render(c, "auth/login.html", map[string]interface{}{})
+}
+
+func signupHandler(c echo.Context) error {
+	return render(c, "auth/signup.html", map[string]interface{}{})
 }
 
 // Room ...

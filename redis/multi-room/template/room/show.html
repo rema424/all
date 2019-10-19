@@ -1,25 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "../layout.html" %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
-</head>
+{% block css %}
+{% endblock %}
 
-<body>
+{% block js %}
+<script src="/js/main.js"></script>
+{% endblock %}
 
-  <h1>WebSocketを使ったチャットアプリケーション</h1>
-  <h2>部屋: {{ RoomID }}</h2>
-  <form id="chatbox">
-    :<br />
-    <textarea name="" id="msgInput" cols="30" rows="10"></textarea>
-    <input type="submit" value="送信">
-  </form>
-  <ul id="messages"></ul>
+{% block title %}
+TOP | {{ block.Super }}
+{% endblock %}
 
-  <script src="/js/main.js"></script>
-</body>
-
-</html>
+{% block content %}
+<h1>WebSocketを使ったチャットアプリケーション</h1>
+<h2>部屋: {{ RoomID }}</h2>
+<form id="chatbox">
+  :<br />
+  <textarea name="" id="msgInput" cols="30" rows="10"></textarea>
+  <input type="submit" value="送信">
+</form>
+<ul id="messages"></ul>
+{% endblock %}
