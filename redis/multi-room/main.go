@@ -9,10 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flosch/pongo2"
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 var redisPool = &redis.Pool{
@@ -37,7 +38,16 @@ var upgrader = websocket.Upgrader{
 var e = createMux()
 
 func init() {
-	e.GET("/rooms/:roomID", roomHandler)
+	// Static
+	e.Static("/js", "src/js")
+
+	// HTML
+	e.GET("/rooms/:roomID", roomShow)
+
+	// API
+
+	// WebSocket
+	e.GET("/ws/rooms/:roomID", roomHandler)
 }
 
 func main() {
@@ -55,6 +65,30 @@ func createMux() *echo.Echo {
 	e.Use(middleware.Recover())
 	e.Use(middleware.Gzip())
 	return e
+}
+
+const tmplPath = "template/"
+
+func htmlBlob(file string, data map[string]interface{}) ([]byte, error) {
+	return pongo2.Must(pongo2.FromCache(tmplPath + file)).ExecuteBytes(data)
+}
+
+func render(c echo.Context, file string, data map[string]interface{}) error {
+	// data["CSRF"] = c.Get("csrf").(string)
+
+	b, err := htmlBlob(file, data)
+	if err != nil {
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.HTMLBlob(http.StatusOK, b)
+}
+
+func roomShow(c echo.Context) error {
+	roomID := c.Param("roomID")
+	return render(c, "room/show.html", map[string]interface{}{
+		"RoomID": roomID,
+	})
 }
 
 // Room ...
@@ -116,6 +150,13 @@ func roomHandler(c echo.Context) error {
 					case redis.Message:
 						fmt.Printf("部屋ID: %d: Redisからメッセージが届きました。クライアントに転送します。\n", room.roomID)
 						fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
+						for client := range room.Clients {
+							if err := client.socket.WriteMessage(websocket.TextMessage, v.Data); err != nil {
+								fmt.Printf("WebSocketでメッセージ送信に失敗しました。 %v\n", err)
+							} else {
+								fmt.Printf("WebSocketでメッセージを送信しました。")
+							}
+						}
 					case redis.Subscription:
 						fmt.Printf("部屋ID: %d: Redisから購読開始通知が届きました。\n", room.roomID)
 						fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
@@ -125,6 +166,7 @@ func roomHandler(c echo.Context) error {
 						close(room.doneCh)
 						return
 					}
+
 				}
 			}()
 
@@ -162,6 +204,8 @@ func roomHandler(c echo.Context) error {
 		log.Printf("upgrader error %s\n", err.Error())
 		return nil
 	}
+	defer socket.Close()
+
 	client := &Client{socket: socket}
 
 	// registerClient()
@@ -179,9 +223,9 @@ func roomHandler(c echo.Context) error {
 	// messageServerToClients()
 	go func() {
 		fmt.Printf("部屋ID: %d: ブラウザへメッセージを送信する準備をします。\n", roomID)
-		for {
+		// for {
 
-		}
+		// }
 	}()
 
 	// messageClientToServer()
