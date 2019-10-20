@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    fd.append('remember', document.querySelector('#remember').checked);
+
     let status;
     fetch('/api/login', { method: 'POST', body: fd })
       .then(res => {

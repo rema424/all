@@ -37,6 +37,7 @@ type signupExecIn struct {
 	Email           string `form:"email"`
 	Password        string `form:"password"`
 	PasswordConfirm string `form:"password-confirm"`
+	Remember        bool   `form:"remember"`
 }
 
 type signupExecOut struct {
@@ -117,10 +118,15 @@ func signupExecHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, out)
 	}
 
+	var expire time.Time
+	if in.Remember {
+		expire = time.Now().Add(60 * 24 * time.Hour)
+	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     "sessid",
 		Value:    sessID,
-		Expires:  time.Now().Add(60 * 24 * time.Hour),
+		Expires:  expire,
 		Path:     "/",
 		HttpOnly: true,
 		// Secure:   true, // 開発環境ではfalse
@@ -137,6 +143,7 @@ func signupExecHandler(c echo.Context) error {
 type loginExecIn struct {
 	Email    string `form:"email"`
 	Password string `form:"password"`
+	Remember bool   `form:"remember"`
 }
 
 type loginExecOut struct {
@@ -191,10 +198,15 @@ func loginExecHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, out)
 	}
 
+	var expire time.Time
+	if in.Remember {
+		expire = time.Now().Add(60 * 24 * time.Hour)
+	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     "sessid",
 		Value:    sessID,
-		Expires:  time.Now().Add(60 * 24 * time.Hour),
+		Expires:  expire,
 		Path:     "/",
 		HttpOnly: true,
 		// Secure:   true, // 開発環境ではfalse
