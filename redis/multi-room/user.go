@@ -34,9 +34,9 @@ type Session struct {
 // --------------------------------------------------
 
 type signupExecIn struct {
-	email           string `form:"email"`
-	password        string `form:"password"`
-	passwordConfirm string `form:"passwordConfirm"`
+	Email           string `form:"email"`
+	Password        string `form:"password"`
+	PasswordConfirm string `form:"password-confirm"`
 }
 
 type signupExecOut struct {
@@ -59,7 +59,7 @@ func signupExecHandler(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, out)
 	}
 
-	if in.password != in.passwordConfirm {
+	if in.Password != in.PasswordConfirm {
 		out.Message = "パスワードが一致しません。"
 		return c.JSON(http.StatusForbidden, out)
 	}
@@ -68,7 +68,7 @@ func signupExecHandler(c echo.Context) error {
 
 	q := `select email from user where email = ?;`
 	var email string
-	if err := dbx.Get(&email, q, in.email); err != nil {
+	if err := dbx.Get(&email, q, in.Email); err != nil {
 		if err != sql.ErrNoRows {
 			fmt.Println(err.Error())
 			out.Message = "そのメールアドレスは既に使われています。"
@@ -76,16 +76,17 @@ func signupExecHandler(c echo.Context) error {
 		}
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
 		fmt.Println(err.Error())
 		out.Message = "予期せぬエラーが発生しました。"
 		return c.JSON(http.StatusInternalServerError, out)
 	}
 
+	fmt.Println(in.Email)
 	u := User{
 		Name:         namesgenerator.GetRandomName(0),
-		Email:        in.email,
+		Email:        in.Email,
 		PasswordHash: string(hash),
 	}
 	var sessID string
@@ -134,8 +135,8 @@ func signupExecHandler(c echo.Context) error {
 // --------------------------------------------------
 
 type loginExecIn struct {
-	email    string `form:"email"`
-	password string `form:"password"`
+	Email    string `form:"email"`
+	Password string `form:"password"`
 }
 
 type loginExecOut struct {
@@ -165,13 +166,13 @@ func loginExecHandler(c echo.Context) error {
   from user
   where email = ?;`
 	var u User
-	if err := dbx.Get(&u, q, in.email); err != nil {
+	if err := dbx.Get(&u, q, in.Email); err != nil {
 		fmt.Println(err.Error())
 		out.Message = "メールアドレスまたはパスワードが違います。"
 		return c.JSON(http.StatusForbidden, out)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(in.password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(in.Password)); err != nil {
 		fmt.Println(err.Error())
 		out.Message = "メールアドレスまたはパスワードが違います。"
 		return c.JSON(http.StatusForbidden, out)
@@ -201,4 +202,51 @@ func loginExecHandler(c echo.Context) error {
 
 	out.Message = "ログインに成功しました。"
 	return c.JSON(http.StatusOK, out)
+}
+
+// --------------------------------------------------
+// isLoggedInHandler
+// --------------------------------------------------
+
+func isLoggedInHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		cookie, err := c.Cookie("sessid")
+		if err != nil {
+			fmt.Println("Cookieが見つかりません。")
+			return c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		dbx := GetDBx(c)
+
+		sessID := cookie.Value
+		var s Session
+		q := `
+    select session_id, user_id, last_logged_in_at
+    from session
+    where session_id = ?;`
+		if err := dbx.Get(&s, q, sessID); err != nil {
+			fmt.Println("セッションが見つかりません。")
+			return c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		if time.Now().After(s.LastLoggedInAt.AddDate(0, 0, 60)) {
+			fmt.Println("セッションの有効期限が切れています。")
+			return c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		if time.Now().After(s.LastLoggedInAt.Add(1 * time.Hour)) {
+			fmt.Println("最終ログインから1時間経過しています。最終ログイン時刻を更新します。")
+			err := dbx.BeginTx(func(x *DBx) error {
+				q := `update session set last_logged_in_at = current_timestamp() where session_id = ?;`
+				_, err := x.Exec(q, sessID)
+				return err
+			})
+			if err != nil {
+				fmt.Println("予期せぬエラーが発生しました。")
+				return c.Redirect(http.StatusSeeOther, "/login")
+			}
+		}
+
+		return next(c)
+	}
 }

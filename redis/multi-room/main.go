@@ -28,16 +28,19 @@ func init() {
 	e.Static("/js", "src/js")
 	e.Static("/css", "src/css")
 
+	auth := e.Group("", isLoggedInHandler)
+
 	// HTML
-	e.GET("/rooms/:roomID", roomShowHandler)
+	auth.GET("/rooms/:roomID", roomShowHandler)
 	e.GET("/login", loginHandler)
 	e.GET("/signup", signupHandler)
 
 	// API
 	e.POST("/api/signup", signupExecHandler)
+	e.POST("/api/login", loginExecHandler)
 
 	// WebSocket
-	e.GET("/ws/rooms/:roomID", roomHandler)
+	auth.GET("/ws/rooms/:roomID", roomHandler)
 }
 
 func main() {

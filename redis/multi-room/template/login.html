@@ -20,9 +20,9 @@
       <div class="card-body login-card-body">
         <p class="login-box-msg">ログイン</p>
 
-        <form action="../../index3.html" method="post">
+        <form name="login-form">
           <div class="input-group mb-3">
-            <input type="email" class="form-control" placeholder="メールアドレス">
+            <input type="email" name="email" class="form-control" placeholder="メールアドレス">
             <div class="input-group-append">
               <div class="input-group-text">
                 <span class="fas fa-envelope"></span>
@@ -30,7 +30,7 @@
             </div>
           </div>
           <div class="input-group mb-3">
-            <input type="password" class="form-control" placeholder="パスワード">
+            <input type="password" name="password" class="form-control" placeholder="パスワード">
             <div class="input-group-append">
               <div class="input-group-text">
                 <span class="fas fa-lock"></span>
@@ -39,7 +39,7 @@
           </div>
           <div class="row">
             <div class="col-12">
-              <button type="submit" class="btn btn-primary btn-block">登録</button>
+              <button id="submit" class="btn btn-primary btn-block">登録</button>
             </div>
           </div>
         </form>
@@ -52,6 +52,7 @@
 
   <script src="/js/vendor/jquery.min.js"></script>
   <script src="/js/vendor/bootstrap.bundle.min.js"></script>
+  <script src="/js/login.js"></script>
 </body>
 
 </html>
