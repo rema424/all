@@ -1,0 +1,20 @@
+.direct-chat {
+  height: calc(100vh - 57px);
+  margin-bottom: 0 !important;
+}
+
+.direct-chat-messages {
+  height: auto;
+}
+
+.direct-chat-text {
+  display: table;
+}
+
+.direct-chat-timestamp {
+  margin-left: 12px;
+}
+
+.card-body {
+  visibility: hidden;
+}

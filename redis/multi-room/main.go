@@ -89,16 +89,16 @@ func render(c echo.Context, file string, data map[string]interface{}) error {
 
 func roomShowHandler(c echo.Context) error {
 	roomID := c.Param("roomID")
-	return render(c, "room/show.html", map[string]interface{}{
+	return render(c, "chat.html", map[string]interface{}{
 		"RoomID": roomID,
 	})
 }
 func loginHandler(c echo.Context) error {
-	return render(c, "auth/login.html", map[string]interface{}{})
+	return render(c, "login.html", map[string]interface{}{})
 }
 
 func signupHandler(c echo.Context) error {
-	return render(c, "auth/signup.html", map[string]interface{}{})
+	return render(c, "signup.html", map[string]interface{}{})
 }
 
 // Room ...
