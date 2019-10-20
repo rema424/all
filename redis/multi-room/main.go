@@ -34,6 +34,7 @@ func init() {
 	e.GET("/signup", signupHandler)
 
 	// API
+	e.POST("/api/signup", signupExecHandler)
 
 	// WebSocket
 	e.GET("/ws/rooms/:roomID", roomHandler)

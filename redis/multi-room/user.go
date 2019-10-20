@@ -12,19 +12,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type user struct {
-	id           int       `db:"id"`
-	name         string    `db:"name"`
-	email        string    `db:"email"`
-	passwordHash string    `db:"password_hash"`
-	createdAt    time.Time `db:"created_at"`
-	updatedAt    time.Time `db:"updated_at"`
+// User ...
+type User struct {
+	ID           int       `db:"id"`
+	Name         string    `db:"name"`
+	Email        string    `db:"email"`
+	PasswordHash string    `db:"password_hash"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
 }
 
-type session struct {
-	sessionID      string    `db:"session_id"`
-	userID         int       `db:"user_id"`
-	lastLoggedInAt time.Time `db:"last_logged_in_at"`
+// Session ...
+type Session struct {
+	SessionID      string    `db:"session_id"`
+	UserID         int       `db:"user_id"`
+	LastLoggedInAt time.Time `db:"last_logged_in_at"`
 }
 
 // --------------------------------------------------
@@ -81,10 +83,10 @@ func signupExecHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, out)
 	}
 
-	u := user{
-		name:         namesgenerator.GetRandomName(0),
-		email:        in.email,
-		passwordHash: string(hash),
+	u := User{
+		Name:         namesgenerator.GetRandomName(0),
+		Email:        in.email,
+		PasswordHash: string(hash),
 	}
 	var sessID string
 
@@ -100,11 +102,11 @@ func signupExecHandler(c echo.Context) error {
 			return err
 		}
 
-		u.id = int(id)
+		u.ID = int(id)
 		sessID = uuid.New().String()
 
 		q = `insert into session (session_id, user_id) values (?, ?);`
-		_, err = x.Exec(q, sessID, u.id)
+		_, err = x.Exec(q, sessID, u.ID)
 		return err
 	})
 
@@ -162,14 +164,14 @@ func loginExecHandler(c echo.Context) error {
   select id, coalesce(password_hash, '') as password_hash
   from user
   where email = ?;`
-	var u user
+	var u User
 	if err := dbx.Get(&u, q, in.email); err != nil {
 		fmt.Println(err.Error())
 		out.Message = "メールアドレスまたはパスワードが違います。"
 		return c.JSON(http.StatusForbidden, out)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(u.passwordHash), []byte(in.password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(in.password)); err != nil {
 		fmt.Println(err.Error())
 		out.Message = "メールアドレスまたはパスワードが違います。"
 		return c.JSON(http.StatusForbidden, out)
@@ -178,7 +180,7 @@ func loginExecHandler(c echo.Context) error {
 	sessID := uuid.New().String()
 	err := dbx.BeginTx(func(x *DBx) error {
 		q := `insert into session (session_id, user_id) values (?, ?);`
-		_, err := x.Exec(q, sessID, u.id)
+		_, err := x.Exec(q, sessID, u.ID)
 		return err
 	})
 
