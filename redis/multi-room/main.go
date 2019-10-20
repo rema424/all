@@ -7,27 +7,11 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
 
-	"github.com/flosch/pongo2"
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
-
-var redisPool = &redis.Pool{
-	MaxIdle:     3,
-	IdleTimeout: 240 * time.Second,
-	Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", ":6379") },
-	TestOnBorrow: func(c redis.Conn, t time.Time) error {
-		if time.Since(t) < time.Minute {
-			return nil
-		}
-		_, err := c.Do("PING")
-		return err
-	},
-}
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -35,6 +19,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+var redisPool = connectRedisPool()
+var db = connectDB()
 var e = createMux()
 
 func init() {
@@ -57,34 +43,9 @@ func main() {
 	port := flag.String("port", "3000", "アプリケーションのアドレス")
 	flag.Parse()
 
-	// http.HandleFunc("/rooms/", roomHandler)
 	http.Handle("/", e)
 	log.Printf("server started at %s\n", *port)
 	log.Fatal(http.ListenAndServe("localhost:"+*port, nil))
-}
-
-func createMux() *echo.Echo {
-	e := echo.New()
-	e.Use(middleware.Recover())
-	e.Use(middleware.Gzip())
-	return e
-}
-
-const tmplPath = "template/"
-
-func htmlBlob(file string, data map[string]interface{}) ([]byte, error) {
-	return pongo2.Must(pongo2.FromCache(tmplPath + file)).ExecuteBytes(data)
-}
-
-func render(c echo.Context, file string, data map[string]interface{}) error {
-	// data["CSRF"] = c.Get("csrf").(string)
-
-	b, err := htmlBlob(file, data)
-	if err != nil {
-		return c.NoContent(http.StatusInternalServerError)
-	}
-
-	return c.HTMLBlob(http.StatusOK, b)
 }
 
 func roomShowHandler(c echo.Context) error {
