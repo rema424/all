@@ -40,6 +40,7 @@ var e = createMux()
 func init() {
 	// Static
 	e.Static("/js", "src/js")
+	e.Static("/css", "src/css")
 
 	// HTML
 	e.GET("/rooms/:roomID", roomShowHandler)

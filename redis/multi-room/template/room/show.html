@@ -12,7 +12,68 @@ TOP | {{ block.Super }}
 {% endblock %}
 
 {% block content %}
-<h1>WebSocketを使ったチャットアプリケーション</h1>
+<!-- <div id="app"> -->
+<nav class="navbar fixed-top navbar-dark bg-dark">
+  <a class="navbar-brand" href="#">Go Redis Chat</a>
+</nav>
+<!-- <div class="container"> -->
+<div class="contents">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-2 bg-faded members">
+        <div class="row members-header">
+          <div class="col-sm-12">
+            Rooms
+          </div>
+        </div>
+        <div class="row members-body">
+          <!-- <ul class="list-group members-group">
+            <li class="list-group-item member-item justify-content-between bg-faded">
+              <img src="//api.adorable.io/avatars/30/aaa.png" class="rounded-circle mr-1">
+              <small>aaaa</small>
+            </li>
+          </ul> -->
+          <ul class="members-group">
+            <li class="member-item justify-content-between bg-faded">
+              <img src="//api.adorable.io/avatars/30/aaa.png" class="rounded-circle mr-1">
+              <small>aaaa</small>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-sm-10 messages-main">
+        aaa
+        <!-- <div class="row messages-header">
+        <div class="col-sm-12">
+          Messages
+        </div>
+      </div>
+      <div class="row messages-body">
+        <div class="col-sm-12">
+          <ul class="list-group message-group">
+            <li class="list-group-item message-item d-flex" track-by="$index">
+              <img src="//api.adorable.io/avatars/30/aaa.png" class="rounded-circle float-left mr-2">
+              message
+              <hr>
+              <small class="text-muted">username @ data</small>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="row messages-footer">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Message text...">
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button">Send</button>
+          </span>
+        </div>
+      </div> -->
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <h1>WebSocketを使ったチャットアプリケーション</h1>
 <h2>部屋: {{ RoomID }}</h2>
 <form id="chatbox">
   :<br />
@@ -191,5 +252,5 @@ TOP | {{ block.Super }}
 <div id="34">34</div>
 <div id="34">34</div>
 <div id="34">34</div>
-<div id="34">34</div>
+<div id="34">34</div> -->
 {% endblock %}
