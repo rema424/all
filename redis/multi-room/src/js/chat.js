@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const box = document.querySelector('.card-body');
+  if (!box) {
+    return;
+  }
   box.scrollTo(0, box.scrollHeight);
   box.style.visibility = 'visible';
 });
