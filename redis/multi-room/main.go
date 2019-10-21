@@ -12,8 +12,8 @@ var e = createMux()
 
 func init() {
 	// Static
-	e.Static("/js", "src/js")
-	e.Static("/css", "src/css")
+	e.Static("/js", "asset/js")
+	e.Static("/css", "asset/css")
 
 	// --------------------
 	// Login

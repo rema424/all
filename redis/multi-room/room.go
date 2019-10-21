@@ -51,10 +51,26 @@ var roomCache = map[int]*Room{}
 
 func roomPageHandler(c echo.Context) error {
 	if c.Request().URL.Path == "/" {
-		c.Redirect(http.StatusPermanentRedirect, "/rooms")
+		return c.Redirect(http.StatusPermanentRedirect, "/rooms")
 	}
 
+	cookie, err := c.Cookie("sessid")
+	if err != nil {
+		return c.Redirect(http.StatusSeeOther, "/login")
+	}
+	sessid := cookie.Value
+
 	dbx := GetDBx(c)
+
+	var u User
+	q := `select u.id as id, u.name as name
+  from user as u
+  inner join session as s on s.user_id = u.id
+  where s.session_id = ?;`
+	if err := dbx.Get(&u, q, sessid); err != nil {
+		fmt.Println(err.Error())
+		return c.NoContent(http.StatusInternalServerError)
+	}
 
 	var rooms []*RoomRecord
 	if err := dbx.Select(&rooms, "select * from room;"); err != nil {
@@ -64,6 +80,7 @@ func roomPageHandler(c echo.Context) error {
 	roomID, _ := strconv.Atoi(c.Param("roomID"))
 	if roomID == 0 {
 		return render(c, "chat.html", map[string]interface{}{
+			"User":  u,
 			"Rooms": rooms,
 		})
 	}
@@ -71,6 +88,7 @@ func roomPageHandler(c echo.Context) error {
 	// return c.JSONPretty(200, rooms, "  ")
 
 	return render(c, "chat.html", map[string]interface{}{
+		"User":   u,
 		"RoomID": roomID,
 		"Rooms":  rooms,
 	})
