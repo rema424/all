@@ -37,27 +37,42 @@ type Client struct {
 	socket *websocket.Conn
 }
 
+// RoomRecord ...
+type RoomRecord struct {
+	ID   int    `db:"id"`
+	Name string `db:"name"`
+}
+
 var roomCache = map[int]*Room{}
 
 // --------------------------------------------------
-// roomIndexPageHandler
+// roomPageHandler
 // --------------------------------------------------
 
-func roomIndexPageHandler(c echo.Context) error {
+func roomPageHandler(c echo.Context) error {
 	if c.Request().URL.Path == "/" {
 		c.Redirect(http.StatusPermanentRedirect, "/rooms")
 	}
-	return render(c, "chat.html", map[string]interface{}{})
-}
 
-// --------------------------------------------------
-// roomShowPageHandler
-// --------------------------------------------------
+	dbx := GetDBx(c)
 
-func roomShowPageHandler(c echo.Context) error {
-	roomID := c.Param("roomID")
+	var rooms []*RoomRecord
+	if err := dbx.Select(&rooms, "select * from room;"); err != nil {
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	roomID, _ := strconv.Atoi(c.Param("roomID"))
+	if roomID == 0 {
+		return render(c, "chat.html", map[string]interface{}{
+			"Rooms": rooms,
+		})
+	}
+
+	// return c.JSONPretty(200, rooms, "  ")
+
 	return render(c, "chat.html", map[string]interface{}{
 		"RoomID": roomID,
+		"Rooms":  rooms,
 	})
 }
 

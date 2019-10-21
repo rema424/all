@@ -53,7 +53,14 @@ scratch. This page gets rid of all links and provides the needed markup only.
           <ul class="nav nav-pills nav-sidebar flex-column text-sm nav-flat nav-compact" data-widget="treeview"
             role="menu" data-accordion="false">
             <li class="nav-header">Channel</li>
+            {% for r in Rooms %}
             <li class="nav-item">
+              <a href="/rooms/{{ r.ID }}" class="nav-link {% if r.ID == RoomID %}active{% endif %}">
+                <i class="nav-icon fas fa-hashtag"></i>
+                <p>{{ r.Name }}</p>
+              </a>
+            </li>
+            <!-- <li class="nav-item">
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-hashtag"></i>
                 <p>Channel 1</p>
@@ -82,7 +89,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
                 <i class="nav-icon fas fa-hashtag"></i>
                 <p>Channel 5</p>
               </a>
-            </li>
+            </li> -->
+            {% endfor %}
           </ul>
         </nav>
       </div>

@@ -33,9 +33,9 @@ func init() {
 	auth := e.Group("", isLoggedInHandler)
 
 	// Page
-	auth.GET("/", roomIndexPageHandler)
-	auth.GET("/rooms", roomIndexPageHandler)
-	auth.GET("/rooms/:roomID", roomShowPageHandler)
+	auth.GET("/", roomPageHandler)
+	auth.GET("/rooms", roomPageHandler)
+	auth.GET("/rooms/:roomID", roomPageHandler)
 	// WebSocket
 	auth.GET("/ws/rooms/:roomID", roomWebSocketHandler)
 }
