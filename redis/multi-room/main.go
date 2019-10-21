@@ -31,6 +31,8 @@ func init() {
 	auth := e.Group("", isLoggedInHandler)
 
 	// HTML
+	auth.GET("/", roomIndexPageHandler)
+	auth.GET("/rooms", roomIndexPageHandler)
 	auth.GET("/rooms/:roomID", roomShowHandler)
 	e.GET("/login", loginHandler)
 	e.GET("/signup", signupHandler)

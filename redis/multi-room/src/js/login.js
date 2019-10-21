@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(body => {
         console.log(JSON.stringify(body));
         if (status == 200) {
-          // window.location.replace('/');
           console.log('ログインに成功しました。');
+          window.location.replace('/rooms');
         }
       });
   });
