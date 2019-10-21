@@ -34,8 +34,8 @@ func init() {
 	auth.GET("/", roomIndexPageHandler)
 	auth.GET("/rooms", roomIndexPageHandler)
 	auth.GET("/rooms/:roomID", roomShowHandler)
-	e.GET("/login", loginHandler)
-	e.GET("/signup", signupHandler)
+	e.GET("/login", loginPageHandler)
+	e.GET("/signup", signupPageHandler)
 
 	// API
 	e.POST("/api/signup", signupExecHandler)
@@ -59,13 +59,6 @@ func roomShowHandler(c echo.Context) error {
 	return render(c, "chat.html", map[string]interface{}{
 		"RoomID": roomID,
 	})
-}
-func loginHandler(c echo.Context) error {
-	return render(c, "login.html", map[string]interface{}{})
-}
-
-func signupHandler(c echo.Context) error {
-	return render(c, "signup.html", map[string]interface{}{})
 }
 
 // Room ...

@@ -30,6 +30,68 @@ type Session struct {
 }
 
 // --------------------------------------------------
+// loginPageHandler
+// --------------------------------------------------
+
+func loginPageHandler(c echo.Context) error {
+	cookie, _ := c.Cookie("sessid")
+
+	if cookie == nil || cookie.Value == "" {
+		return render(c, "login.html", map[string]interface{}{})
+	}
+
+	sessid := cookie.Value
+	dbx := GetDBx(c)
+	var s Session
+	if err := dbx.Get(&s, "select * from session where session_id = ?;", sessid); err == nil {
+		if time.Now().Before(s.LastLoggedInAt.AddDate(0, 0, 60)) {
+			return c.Redirect(http.StatusSeeOther, "/rooms")
+		}
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "sessid",
+		Path:     "/",
+		HttpOnly: true,
+		// Secure:   true, // 開発環境ではfalse
+		MaxAge: -1,
+	})
+
+	return render(c, "login.html", map[string]interface{}{})
+}
+
+// --------------------------------------------------
+// signupPageHandler
+// --------------------------------------------------
+
+func signupPageHandler(c echo.Context) error {
+	cookie, _ := c.Cookie("sessid")
+
+	if cookie == nil || cookie.Value == "" {
+		return render(c, "signup.html", map[string]interface{}{})
+	}
+
+	sessid := cookie.Value
+	dbx := GetDBx(c)
+	var s Session
+	if err := dbx.Get(&s, "select * from session where session_id = ?;", sessid); err == nil {
+		if time.Now().Before(s.LastLoggedInAt.AddDate(0, 0, 60)) {
+			return c.Redirect(http.StatusSeeOther, "/rooms")
+		}
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "sessid",
+		Path:     "/",
+		HttpOnly: true,
+		// Secure:   true, // 開発環境ではfalse
+		MaxAge: -1,
+	})
+
+	return render(c, "signup.html", map[string]interface{}{})
+}
+
+// --------------------------------------------------
 // signupExecHandler
 // --------------------------------------------------
 
