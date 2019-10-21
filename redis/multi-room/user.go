@@ -279,6 +279,22 @@ func loginExecHandler(c echo.Context) error {
 }
 
 // --------------------------------------------------
+// logoutHandler
+// --------------------------------------------------
+
+func logoutHandler(c echo.Context) error {
+	c.SetCookie(&http.Cookie{
+		Name:     "sessid",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+		// Secure:   true, // 開発環境ではfalse
+	})
+	return c.Redirect(http.StatusSeeOther, "/login")
+}
+
+// --------------------------------------------------
 // isLoggedInHandler
 // --------------------------------------------------
 

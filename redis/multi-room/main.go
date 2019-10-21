@@ -22,6 +22,7 @@ func init() {
 	// Page
 	e.GET("/login", loginPageHandler)
 	e.GET("/signup", signupPageHandler)
+	e.GET("/logout", logoutHandler)
 	// API
 	e.POST("/api/signup", signupExecHandler)
 	e.POST("/api/login", loginExecHandler)
