@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/websocket"
@@ -43,6 +44,16 @@ type RoomRecord struct {
 	Name string `db:"name"`
 }
 
+// Message ...
+type Message struct {
+	ID        int       `db:"id"`
+	RoomID    int       `db:"room_id"`
+	UserID    int       `db:"user_id"`
+	Body      string    `db:"body"`
+	CreatedAt time.Time `db:"created_at"`
+	User      *User     `db:"user"`
+}
+
 var roomCache = map[int]*Room{}
 
 // --------------------------------------------------
@@ -63,7 +74,8 @@ func roomPageHandler(c echo.Context) error {
 	dbx := GetDBx(c)
 
 	var u User
-	q := `select u.id as id, u.name as name
+	q := `
+  select u.id as id, u.name as name
   from user as u
   inner join session as s on s.user_id = u.id
   where s.session_id = ?;`
@@ -73,7 +85,9 @@ func roomPageHandler(c echo.Context) error {
 	}
 
 	var rooms []*RoomRecord
-	if err := dbx.Select(&rooms, "select * from room;"); err != nil {
+	q = "select * from room;"
+	if err := dbx.Select(&rooms, q); err != nil {
+		fmt.Println(err.Error())
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
@@ -85,12 +99,29 @@ func roomPageHandler(c echo.Context) error {
 		})
 	}
 
-	// return c.JSONPretty(200, rooms, "  ")
+	var msgs []*Message
+	q = `
+  select
+    m.id as id,
+    m.body as body,
+    m.created_at as created_at,
+    u.id as 'user.id',
+    u.name as 'user.name'
+  from message as m
+  inner join user as u on u.id = m.user_id
+  where m.room_id = ?;`
+	if err := dbx.Select(&msgs, q, roomID); err != nil {
+		fmt.Println(err.Error())
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	// return c.JSONPretty(200, msgs, "  ")
 
 	return render(c, "chat.html", map[string]interface{}{
-		"User":   u,
-		"RoomID": roomID,
-		"Rooms":  rooms,
+		"User":     u,
+		"Rooms":    rooms,
+		"RoomID":   roomID,
+		"Messages": msgs,
 	})
 }
 

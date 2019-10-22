@@ -103,17 +103,17 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <div class="card-body">
           <div class="direct-chat-messages">
 
+            {% for m in Messages %}
             <div class="direct-chat-msg">
               <div class="direct-chat-infos clearfix">
-                <span class="direct-chat-name">Alexander Pierce</span>
-                <span class="direct-chat-timestamp">23 Jan 2:00 pm</span>
+                <span class="direct-chat-name">{{ m.User.Name }}</span>
+                <span class="direct-chat-timestamp">{{ m.CreatedAt|date:"2006-01-02 15:04" }}</span>
               </div>
-              <img class="direct-chat-img" src="//api.adorable.io/avatars/128/aaa.png" alt="message user image">
-              <div class="direct-chat-text">
-                Is this template really for free? That's unbelievable! あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ
-                あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ あああああ
-              </div>
+              <img class="direct-chat-img" src="//api.adorable.io/avatars/128/{{ m.User.Name }}.png"
+                alt="message user image">
+              <div class="direct-chat-text">{{ m.Body }}</div>
             </div>
+            {% endfor %}
 
             <div class="direct-chat-msg">
               <div class="direct-chat-infos clearfix">
