@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -131,6 +132,26 @@ func roomPageHandler(c echo.Context) error {
 
 func roomWebSocketHandler(c echo.Context) error {
 	defer fmt.Println("リクエストの処理を終了します。")
+
+	// ユーザーを取得する
+	cookie, _ := c.Cookie("sessid")
+	if cookie == nil || cookie.Value == "" {
+		return nil
+	}
+	sessid := cookie.Value
+	dbx := GetDBx(c)
+	var u User
+	q := `
+  select
+    u.id as id,
+    u.name as name
+  from user as u
+  inner join session as s on s.user_id = u.id
+  where s.session_id = ?;`
+	if err := dbx.Get(&u, q, sessid); err != nil {
+		return nil
+	}
+
 	// ルームを準備する
 	roomID, _ := strconv.Atoi(c.Param("roomID"))
 	var room *Room
@@ -224,11 +245,6 @@ func roomWebSocketHandler(c echo.Context) error {
 	}
 	defer socket.Close()
 
-	// dbx := GetDBx(c)
-
-	// var u User
-	// if err := dbx.Get()
-
 	client := &Client{socket: socket}
 
 	// registerClient()
@@ -257,7 +273,17 @@ func roomWebSocketHandler(c echo.Context) error {
 		for {
 			if _, msg, err := client.socket.ReadMessage(); err == nil {
 				fmt.Printf("部屋ID: %d: ブラウザからメッセージを受信しました。\n", roomID)
-				room.msgCh <- msg
+				m := Message{
+					Body:      string(msg),
+					CreatedAt: time.Now(),
+					User:      &u,
+				}
+				b, err := json.Marshal(m)
+				if err != nil {
+					fmt.Println(err.Error())
+				} else {
+					room.msgCh <- b
+				}
 			} else {
 				break
 			}

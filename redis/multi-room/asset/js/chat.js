@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const addMsgBottom = msg => {
     const elm = createMsgElm(msg);
     msgBox.appendChild(elm);
+    box.scrollTo(0, box.scrollHeight);
   };
 
   const addMsgsTop = msgs => {
@@ -104,12 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Init
-  const m = { name: 'grace', createdAt: '1234-12-31 11:11', body: 'こんにちは' };
-  const ms = Array.from({ length: 5 }, () => m);
-  console.log(m);
-  console.log(ms);
-  addMsgBottom(m);
-  addMsgsTop(ms);
+  // const m = { name: 'grace', createdAt: '1234-12-31 11:11', body: 'こんにちは' };
+  // const ms = Array.from({ length: 5 }, () => m);
+  // console.log(m);
+  // console.log(ms);
+  // addMsgBottom(m);
+  // addMsgsTop(ms);
   box.scrollTo(0, box.scrollHeight);
   box.style.visibility = 'visible';
   if (!window.WebSocket) {
@@ -134,8 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.onmessage = e => {
       console.log(e.data);
-      // const msg = JSON.parse(e.data);
-      const msg = e.data;
+      const data = JSON.parse(e.data);
+      // const msg = e.data;
+      const msg = {
+        name: data.User.Name,
+        createdAt: data.CreatedAt.slice(0, 16).replace('T', ' '),
+        body: data.Body
+      };
+      addMsgBottom(msg);
       // addMsgElm(msg);
     };
   }
