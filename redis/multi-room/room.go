@@ -224,6 +224,11 @@ func roomWebSocketHandler(c echo.Context) error {
 	}
 	defer socket.Close()
 
+	// dbx := GetDBx(c)
+
+	// var u User
+	// if err := dbx.Get()
+
 	client := &Client{socket: socket}
 
 	// registerClient()

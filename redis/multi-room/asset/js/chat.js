@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // data
   let timerId;
   let topMsgId;
+  let socket;
 
   // Func
   const createMsgElm = msg => {
@@ -81,6 +82,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event
   box.addEventListener('scroll', scrollHandler, { passive: true });
 
+  sendBtn.addEventListener('click', e => {
+    e.preventDefault();
+
+    const msg = msgIn.value;
+
+    if (!msg) {
+      e.preventDefault();
+      return;
+    }
+
+    if (!socket) {
+      console.log('エラー：WebSocket接続が行われていません。');
+      e.preventDefault();
+      return;
+    }
+
+    socket.send(msg);
+    // socket.send(JSON.stringify({ Message: msg }));
+    msgIn.value = null;
+  });
+
   // Init
   const m = { name: 'grace', createdAt: '1234-12-31 11:11', body: 'こんにちは' };
   const ms = Array.from({ length: 5 }, () => m);
@@ -111,9 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     socket.onmessage = e => {
+      console.log(e.data);
       // const msg = JSON.parse(e.data);
       const msg = e.data;
-      addMsgElm(msg);
+      // addMsgElm(msg);
     };
   }
 });
