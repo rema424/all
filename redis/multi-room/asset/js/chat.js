@@ -1,3 +1,5 @@
+'use strict';
+
 document.addEventListener('DOMContentLoaded', () => {
   // Element
   const box = document.querySelector('.card-body');
@@ -6,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const msgBox = document.querySelector('.direct-chat-messages');
   const msgTmpl = document.querySelector('#msg-tmpl');
+  const msgIn = document.querySelector('#msg-in');
+  const sendBtn = document.querySelector('#msg-send');
+
+  // data
+  let timerId;
+  let topMsgId;
 
   // Func
   const createMsgElm = msg => {
@@ -39,15 +47,75 @@ document.addEventListener('DOMContentLoaded', () => {
     msgBox.firstElementChild.before(elm);
   };
 
+  const fetchOldMsgs = topMsgId => {
+    return fetch();
+  };
+
+  const scrollHandler = e => {
+    console.log('a');
+    if (timerId) return;
+
+    timerId = setTimeout(() => {
+      timerId = 0;
+    }, 500);
+
+    console.log(timerId);
+    const elm = document.querySelector(`#msg-${topMsgId}`);
+    if (!elm) return;
+
+    const targetY = elm.getBoundingClientRect().bottom;
+    if (targetY < 0) return;
+
+    console.log('scroll in', topMsgId);
+    // fetchOldMsgs(topMsgId)
+    //   .then(msgs => {
+    //     if (!msgs) return;
+
+    //     topMsgId = msgs[0].id;
+    //     addMsgsTop(msgs);
+    //   })
+    //   .catch(err => console.error(err))
+    // .finally(() => console.log('f'));
+  };
+
+  // Event
+  box.addEventListener('scroll', scrollHandler, { passive: true });
+
   // Init
   const m = { name: 'grace', createdAt: '1234-12-31 11:11', body: 'こんにちは' };
-  const ms = Array.from({ length: 5 }, (_, i) => m);
+  const ms = Array.from({ length: 5 }, () => m);
   console.log(m);
   console.log(ms);
   addMsgBottom(m);
   addMsgsTop(ms);
   box.scrollTo(0, box.scrollHeight);
   box.style.visibility = 'visible';
+  if (!window.WebSocket) {
+    console.log('エラー：WebSocketに対応していないブラウザです。');
+  } else {
+    const protocol = window.location.protocol == 'http:' ? 'ws:' : 'wss:';
+    const host = window.location.host;
+    const pathname = window.location.pathname;
+    socket = new WebSocket(`${protocol}//${host}/ws${pathname}`);
+
+    socket.onopen = () => {
+      console.log('接続を開始しました。');
+    };
+
+    socket.error = () => {
+      console.log('エラーが発生しました。');
+    };
+
+    socket.onclose = () => {
+      console.log('接続が終了しました。');
+    };
+
+    socket.onmessage = e => {
+      // const msg = JSON.parse(e.data);
+      const msg = e.data;
+      addMsgElm(msg);
+    };
+  }
 });
 
 // 'use strict';
