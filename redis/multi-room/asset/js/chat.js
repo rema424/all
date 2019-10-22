@@ -1,8 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Element
   const box = document.querySelector('.card-body');
   if (!box) {
     return;
   }
+  const msgBox = document.querySelector('.direct-chat-messages');
+  const msgTmpl = document.querySelector('#msg-tmpl');
+
+  // Func
+  const createMsgElm = msg => {
+    const elm = document.createDocumentFragment();
+    elm.appendChild(document.importNode(msgTmpl.content, true));
+    elm.querySelector('.direct-chat-name').textContent = msg.name;
+    elm.querySelector('.direct-chat-timestamp').textContent = msg.createdAt;
+    elm.querySelector('.direct-chat-text').textContent = msg.body;
+    elm.querySelector('.direct-chat-img').setAttribute('src', `//api.adorable.io/avatars/128/${msg.name}.png`);
+    return elm;
+  };
+
+  const createMsgsElm = msgs => {
+    const elm = document.createDocumentFragment();
+    if (!Array.isArray(msgs)) {
+      return elm;
+    }
+    msgs.forEach(msg => {
+      elm.appendChild(createMsgElm(msg));
+    });
+    return elm;
+  };
+
+  const addMsgBottom = msg => {
+    const elm = createMsgElm(msg);
+    msgBox.appendChild(elm);
+  };
+
+  const addMsgsTop = msgs => {
+    const elm = createMsgsElm(msgs);
+    msgBox.firstElementChild.before(elm);
+  };
+
+  // Init
+  const m = { name: 'grace', createdAt: '1234-12-31 11:11', body: 'こんにちは' };
+  const ms = Array.from({ length: 5 }, (_, i) => m);
+  console.log(m);
+  console.log(ms);
+  addMsgBottom(m);
+  addMsgsTop(ms);
   box.scrollTo(0, box.scrollHeight);
   box.style.visibility = 'visible';
 });
