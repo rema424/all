@@ -48,8 +48,11 @@ func newRedisPool() *redis.Pool {
 }
 
 func init() {
-	// curl -X POST -d 'userId=user:1' -d 'articleTitle=タイトル1' -d localhost:3333/articles
+	// curl -X POST -d 'userId=1' -d 'title=タイトル1' -d localhost:3333/articles
 	e.POST("/articles", postArticle)
+
+	// curl -X POST -d 'userId=1' localhost:3333/articles/9/votes
+	e.POST("/articles/:articleID/votes", articleVote)
 }
 
 func main() {
@@ -87,7 +90,7 @@ func postArticle(c echo.Context) error {
 
 	// 投票セット
 	voted := fmt.Sprintf("voted:%d", articleID)
-	conn.Do("sadd", voted, in.UserID)
+	conn.Do("sadd", voted, "user:"+in.UserID)
 	conn.Do("expire", voted, oneWeekSeconds)
 
 	// 記事ハッシュ
@@ -96,15 +99,15 @@ func postArticle(c echo.Context) error {
 	conn.Do("HMSET", article,
 		"title", in.Title,
 		"poster", in.UserID,
-		"time", now,
+		"created", now,
 		"votes", 1,
 	)
 
 	// スコアソートセット
-	conn.Do("zadd", now+voteScore, article)
+	conn.Do("zadd", "score:", now+voteScore, article)
 
 	// 投稿時間ソートセット
-	conn.Do("zadd", now, article)
+	conn.Do("zadd", "created:", now, article)
 
 	return c.JSON(200, in)
 }
@@ -121,18 +124,30 @@ func articleVote(c echo.Context) error {
 	}
 	defer conn.Close()
 
-	articleID := c.FormValue("article-id")
+	articleID := c.Param("articleID")
+	userID := c.FormValue("userId")
 
-	r, err := redis.Int(conn.Do("ZSCORE", "time:", "article:"+articleID))
-	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+	if articleID == "" || userID == "" {
+		return c.String(http.StatusInternalServerError, "パラメータが足りません。")
 	}
-	fmt.Println(r)
+
+	created, err := redis.Int(conn.Do("ZSCORE", "created:", "article:"+articleID))
+	if err != nil {
+		fmt.Println(err)
+		return c.String(http.StatusInternalServerError, "なんかエラー")
+	}
+	fmt.Println(created)
 
 	cutoff := time.Now().Unix() - oneWeekSeconds
-	if int64(r) < cutoff {
-		return c.String(http.StatusOK, "投票期限が過ぎています")
+	if int64(created) < cutoff {
+		return c.String(400, "投票期限が過ぎています")
 	}
 
-	return nil
+	if _, err := conn.Do("sadd", "voted:"+articleID, "user:"+userID); err != nil {
+		return c.String(400, "投票失敗")
+	}
+	conn.Do("zincrby", "score:", voteScore, "article:"+articleID)
+	conn.Do("hincrby", "article:"+articleID, "votes", 1)
+
+	return c.String(200, "成功です。")
 }
