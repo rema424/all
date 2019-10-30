@@ -1,11 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/taskqueue"
 )
 
 var e = createMux()
@@ -14,7 +18,7 @@ func init() {
 	// routing
 	e.GET("/", helloHandler)
 	e.GET("/enqueue", enqueueHandler)
-	e.GET("/dequeue", dequeueHandler)
+	e.POST("/dequeue", dequeueHandler)
 }
 
 func main() {
@@ -46,9 +50,37 @@ func helloHandler(c echo.Context) error {
 }
 
 func enqueueHandler(c echo.Context) error {
-	return nil
+	fmt.Println("enqueueHandler called")
+
+	ctx := appengine.NewContext(c.Request())
+	t := taskqueue.Task{
+		Path:    "/dequeue",
+		Payload: []byte("example"),
+		Name:    fmt.Sprintf("example-task-%d", time.Now().Unix()),
+		Delay:   1 * time.Second,
+		RetryOptions: &taskqueue.RetryOptions{
+			RetryLimit: 4,
+			MinBackoff: 500 * time.Millisecond,
+		},
+	}
+
+	if _, err := taskqueue.Add(ctx, &t, "queue-blue"); err != nil {
+		fmt.Println("taskqueue.Add() error:", err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	fmt.Println("task added successfully")
+	return c.JSON(http.StatusOK, "task added successfully")
 }
 
 func dequeueHandler(c echo.Context) error {
-	return nil
+	fmt.Println("dequeueHandler called")
+	b, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		fmt.Println("Body読み込みエラー:", err)
+		return c.JSON(http.StatusInternalServerError, "わざと失敗")
+	}
+
+	fmt.Println(string(b))
+	return c.JSON(http.StatusOK, string(b))
 }
