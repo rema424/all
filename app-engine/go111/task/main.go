@@ -56,13 +56,18 @@ type Message struct {
 	Content  string `json:"content"`
 }
 
+// Numbers ...
+type Numbers []int
+
 func enqueueHandler(c echo.Context) error {
 	fmt.Println("enqueueHandler called")
 
 	ctx := appengine.NewContext(c.Request())
 	taskname := fmt.Sprintf("example-task-%d", time.Now().Unix())
-	msg := Message{taskname, "Hello from client"}
-	b, err := json.Marshal(msg)
+	// msg := Message{taskname, "Hello from client"}
+	nums := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	// b, err := json.Marshal(msg)
+	b, err := json.Marshal(nums)
 	if err != nil {
 		fmt.Println("json.Marshal() error:", err)
 		return c.JSON(http.StatusInternalServerError, err.Error())
@@ -94,13 +99,18 @@ func dequeueHandler(c echo.Context) error {
 		fmt.Println("Body読み込みエラー:", err)
 		return c.JSON(http.StatusInternalServerError, "わざと失敗")
 	}
-	m := Message{}
-	err = json.Unmarshal(b, &m)
+	// m := Message{}
+	nums := []int{}
+	err = json.Unmarshal(b, &nums)
 	if err != nil {
 		fmt.Println("json.Unmarshal() error:", err)
 		return c.JSON(http.StatusInternalServerError, "わざと失敗")
 	}
 
-	fmt.Println(m)
-	return c.JSON(http.StatusOK, m)
+	for _, n := range nums {
+		fmt.Println(n)
+	}
+
+	fmt.Println(nums)
+	return c.JSON(http.StatusOK, nums)
 }
