@@ -1,0 +1,4 @@
+queue:
+  - name: queue-blue
+    target: default
+    rate: 5/s
