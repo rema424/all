@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -49,14 +50,27 @@ func helloHandler(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello World!")
 }
 
+// Message ...
+type Message struct {
+	TaskName string `json:"taskName"`
+	Content  string `json:"content"`
+}
+
 func enqueueHandler(c echo.Context) error {
 	fmt.Println("enqueueHandler called")
 
 	ctx := appengine.NewContext(c.Request())
+	taskname := fmt.Sprintf("example-task-%d", time.Now().Unix())
+	msg := Message{taskname, "Hello from client"}
+	b, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Println("json.Marshal() error:", err)
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
 	t := taskqueue.Task{
 		Path:    "/dequeue",
-		Payload: []byte("example"),
-		Name:    fmt.Sprintf("example-task-%d", time.Now().Unix()),
+		Payload: b,
+		Name:    taskname,
 		Delay:   1 * time.Second,
 		RetryOptions: &taskqueue.RetryOptions{
 			RetryLimit: 4,
@@ -80,7 +94,13 @@ func dequeueHandler(c echo.Context) error {
 		fmt.Println("Body読み込みエラー:", err)
 		return c.JSON(http.StatusInternalServerError, "わざと失敗")
 	}
+	m := Message{}
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		fmt.Println("json.Unmarshal() error:", err)
+		return c.JSON(http.StatusInternalServerError, "わざと失敗")
+	}
 
-	fmt.Println(string(b))
-	return c.JSON(http.StatusOK, string(b))
+	fmt.Println(m)
+	return c.JSON(http.StatusOK, m)
 }
