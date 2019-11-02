@@ -1,7 +1,12 @@
 package object
 
+import "time"
+
 // Order ...
 type Order struct {
-	Customer Customer
-	Employee Employee
+	ID           int
+	OrderDetails OrderDetails
+	Customer     Customer
+	Employee     Employee
+	CreatedAt    time.Time
 }
