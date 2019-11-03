@@ -11,13 +11,13 @@ import (
 	"os"
 
 	"myproject/appengine/default/handler"
-	"myproject/infra/components"
+	"myproject/infra/component"
 )
 
 // [END import]
 // [START main_func]
 
-var app = components.App
+var app = component.App
 
 func init() {
 	app.GET("/", handler.HandleHello)

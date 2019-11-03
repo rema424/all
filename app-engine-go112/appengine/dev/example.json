@@ -1,0 +1,9 @@
+{
+  "orderDetails": [
+    { "itemId": 901, "quantity": 2 },
+    { "itemId": 902, "quantity": 2 },
+    { "itemId": 903, "quantity": 2 }
+  ],
+  "customer": { "name": "Alice", "phoneNumber": "XXX-XXXX-XXXX" },
+  "employee": { "id": 101 }
+}

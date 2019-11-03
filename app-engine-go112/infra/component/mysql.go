@@ -1,1 +1,1 @@
-package components
+package component
