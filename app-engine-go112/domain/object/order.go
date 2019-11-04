@@ -6,6 +6,7 @@ import "time"
 type Order struct {
 	ID           int
 	OrderDetails OrderDetails
+	TotalPrice   int
 	Customer     Customer
 	Employee     Employee
 	CreatedAt    time.Time

@@ -4,5 +4,5 @@ package object
 type Customer struct {
 	ID          int
 	Name        string
-	PhoneNumber int
+	PhoneNumber string
 }
