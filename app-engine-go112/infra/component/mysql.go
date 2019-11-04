@@ -59,21 +59,19 @@ func OpenDB() {
 		ParseTime:            true,
 	}
 
-	var err error
-
-	gDBx, err = sqlx.Open("mysql", cfg.FormatDSN())
+	dbx, err := sqlx.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if err := gDBx.Ping(); err != nil {
+	if err := dbx.Ping(); err != nil {
 		log.Fatalln(err)
 	}
 
-	gDBx.SetMaxOpenConns(30)
-	gDBx.SetMaxIdleConns(30)
-	gDBx.SetConnMaxLifetime(60 * time.Second)
+	dbx.SetMaxOpenConns(30)
+	dbx.SetMaxIdleConns(30)
+	dbx.SetConnMaxLifetime(60 * time.Second)
 
-	gDB = newDB(gDBx)
+	gDBx, gDB = dbx, newDB(dbx)
 
 	log.Println("db connected successfully")
 }
