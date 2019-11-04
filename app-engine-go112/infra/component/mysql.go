@@ -13,7 +13,7 @@ import (
 
 // Global variables
 var (
-	gDBx *sqlx.DB
+	GDBx *sqlx.DB
 	gDB  *DB
 )
 
@@ -71,18 +71,18 @@ func OpenDB() {
 	dbx.SetMaxIdleConns(30)
 	dbx.SetConnMaxLifetime(60 * time.Second)
 
-	gDBx, gDB = dbx, newDB(dbx)
+	GDBx, gDB = dbx, newDB(dbx)
 
 	log.Println("db connected successfully")
 }
 
 // CloseDB ...
 func CloseDB() {
-	if gDBx == nil {
+	if GDBx == nil {
 		log.Fatalln("failed to close dbx - err: not found dbx instance")
 	}
 
-	if err := gDBx.Close(); err != nil {
+	if err := GDBx.Close(); err != nil {
 		log.Fatalln("failed to close dbx - err:", err.Error())
 	}
 
