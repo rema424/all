@@ -109,8 +109,8 @@ func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {
 // TxFunc ...
 type TxFunc func(db *DB) error
 
-// RunInTransaction ...
-func (db *DB) RunInTransaction(fn TxFunc) error {
+// RunInTx ...
+func (db *DB) RunInTx(fn TxFunc) error {
 	// トランザクション開始済み（querierの実体が*sqlx.Tx）ならそのままクエリ実行
 	if _, ok := db.querier.(*sqlx.Tx); ok {
 		return fn(db)
