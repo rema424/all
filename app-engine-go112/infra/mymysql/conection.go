@@ -12,12 +12,13 @@ import (
 
 var gDB = newDB()
 
-type db struct {
-	db    *sqlx.DB
+// DB ...
+type DB struct {
+	*sqlx.DB
 	txMap map[string]*sqlx.Tx
 }
 
-func newDB() *db {
+func newDB() *DB {
 	var (
 		host     = os.Getenv("DB_HOST")
 		port     = os.Getenv("DB_PORT")
@@ -50,8 +51,8 @@ func newDB() *db {
 	dbx.SetMaxIdleConns(30)
 	dbx.SetConnMaxLifetime(60 * time.Second)
 
-	return &db{
-		db:    dbx,
+	return &DB{
+		DB:    dbx,
 		txMap: make(map[string]*sqlx.Tx),
 	}
 }
@@ -59,15 +60,16 @@ func newDB() *db {
 // TxFunc ...
 type TxFunc func(context.Context) error
 
-func (db *db) RunInTransaction(ctx context.Context, fn TxFunc) error {
+// RunInTransaction ...
+func (db *DB) RunInTransaction(ctx context.Context, fn TxFunc) error {
 	return db.runTransaction(ctx, fn)
 }
 
-func (db *db) runTransaction(ctx context.Context, fn TxFunc) error {
+func (db *DB) runTransaction(ctx context.Context, fn TxFunc) error {
 	return nil
 }
 
-func (db *db) isInTransaction(ctx context.Context) bool {
+func (db *DB) isInTransaction(ctx context.Context) bool {
 	if val, ok := ctx.Value("isInTransaction").(bool); ok {
 		return val
 	}
