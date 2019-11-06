@@ -2,6 +2,8 @@ package mymysql
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -10,15 +12,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var gDB = newDB()
+var gDB = NewDB()
 
-// DB ...
-type DB struct {
-	*sqlx.DB
-	txMap map[string]*sqlx.Tx
+// Queryer ...
+type Queryer interface {
+	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	NamedExec(query string, arg interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func newDB() *DB {
+type queryer struct {
+	Queryer
+}
+
+// // DB ...
+// type DB struct {
+// 	*sqlx.DB
+// 	txMap map[string]*sqlx.Tx
+// }
+
+// NewDB ...
+func NewDB() Queryer {
 	var (
 		host     = os.Getenv("DB_HOST")
 		port     = os.Getenv("DB_PORT")
@@ -51,25 +67,54 @@ func newDB() *DB {
 	dbx.SetMaxIdleConns(30)
 	dbx.SetConnMaxLifetime(60 * time.Second)
 
-	return &DB{
-		DB:    dbx,
-		txMap: make(map[string]*sqlx.Tx),
-	}
+	return &queryer{dbx}
+}
+
+func newTx(tx *sqlx.Tx) Queryer {
+	return &queryer{tx}
 }
 
 // TxFunc ...
-type TxFunc func(context.Context) error
+type TxFunc func(ctx context.Context, q Queryer) error
 
 // RunInTransaction ...
-func (db *DB) RunInTransaction(ctx context.Context, fn TxFunc) error {
-	return db.runTransaction(ctx, fn)
+func (q *queryer) RunInTransaction(ctx context.Context, fn TxFunc) error {
+	if val, ok := ctx.Value("transaction").(*queryer); ok {
+		if tx, ok := val.Queryer.(*sqlx.Tx); ok {
+			return fn(ctx, tx)
+		}
+	}
+
+	var tx *sqlx.Tx
+	if val, ok := q.Queryer.(*sqlx.Tx); ok {
+		tx = val
+	} else if val, ok := q.Queryer.(*sqlx.DB); ok {
+		var err error
+		tx, err = val.Beginx()
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("invalid DB")
+	}
+
+	return runTransaction(ctx, tx, fn)
 }
 
-func (db *DB) runTransaction(ctx context.Context, fn TxFunc) error {
-	return nil
+func runTransaction(ctx context.Context, tx *sqlx.Tx, fn TxFunc) (err error) {
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+
+	err = fn(newTx(tx))
+	return
 }
 
-func (db *DB) isInTransaction(ctx context.Context) bool {
+func (q *queryer) isInTransaction(ctx context.Context) bool {
 	if val, ok := ctx.Value("isInTransaction").(bool); ok {
 		return val
 	}

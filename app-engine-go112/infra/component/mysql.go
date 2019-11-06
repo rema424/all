@@ -21,6 +21,7 @@ type querier interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error
 	Exec(query string, args ...interface{}) (sql.Result, error)
+	NamedExec(query string, arg interface{}) (sql.Result, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
@@ -104,6 +105,11 @@ func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {
 	err := db.querier.Get(dest, query, args...)
 	db.log(start, err, query, args, countRows(dest))
 	return err
+}
+
+// NamedExec ...
+func (db *DB) NamedExec(query string, arg interface{}) (sql.Result, error) {
+	return db.querier.NamedExec(query, arg)
 }
 
 // TxFunc ...
