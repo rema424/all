@@ -107,6 +107,8 @@ func dequeueHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, "わざと失敗")
 	}
 
+	fmt.Println(string(b))
+
 	for _, n := range nums {
 		fmt.Println(n)
 	}
