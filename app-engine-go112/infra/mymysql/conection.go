@@ -3,7 +3,6 @@ package mymysql
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -12,7 +11,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var gDB = NewDB()
+// GlobalDB ...
+var GlobalDB = newDB()
 
 // Queryer ...
 type Queryer interface {
@@ -27,14 +27,7 @@ type queryer struct {
 	Queryer
 }
 
-// // DB ...
-// type DB struct {
-// 	*sqlx.DB
-// 	txMap map[string]*sqlx.Tx
-// }
-
-// NewDB ...
-func NewDB() Queryer {
+func newDB() Queryer {
 	var (
 		host     = os.Getenv("DB_HOST")
 		port     = os.Getenv("DB_PORT")
@@ -85,33 +78,43 @@ func (q *queryer) RunInTransaction(ctx context.Context, fn TxFunc) error {
 		}
 	}
 
-	var tx *sqlx.Tx
-	if val, ok := q.Queryer.(*sqlx.Tx); ok {
-		tx = val
-	} else if val, ok := q.Queryer.(*sqlx.DB); ok {
-		var err error
-		tx, err = val.Beginx()
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("invalid DB")
-	}
+	// var tx *sqlx.Tx
+	// if val, ok := q.Queryer.(*sqlx.Tx); ok {
+	// 	tx = val
+	// } else if val, ok := q.Queryer.(*sqlx.DB); ok {
+	// 	var err error
+	// 	tx, err = val.Beginx()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	return fmt.Errorf("invalid DB")
+	// }
 
-	return runTransaction(ctx, tx, fn)
+	return nil
+	// return runTransaction(ctx, tx, fn)
 }
 
-func runTransaction(ctx context.Context, tx *sqlx.Tx, fn TxFunc) (err error) {
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+// func runTransaction(ctx context.Context, tx *sqlx.Tx, fn TxFunc) (err error) {
+// 	defer func() {
+// 		if err != nil {
+// 			tx.Rollback()
+// 		} else {
+// 			tx.Commit()
+// 		}
+// 	}()
 
-	err = fn(newTx(tx))
-	return
+// 	err = fn(newTx(tx))
+// 	return
+// }
+
+// func RunInTransaction2(ctx context.Context, fn TxFunc) error {
+// 	// if _, ok :=
+// 	return runTransaction(ctx, fn)
+// }
+
+func runTransaction2(ctx context.Context, fn TxFunc) error {
+	return nil
 }
 
 func (q *queryer) isInTransaction(ctx context.Context) bool {

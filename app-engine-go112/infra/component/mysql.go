@@ -112,6 +112,9 @@ func (db *DB) NamedExec(query string, arg interface{}) (sql.Result, error) {
 	return db.querier.NamedExec(query, arg)
 }
 
+// RunInTransaction ...
+func (db *DB) RunInTransaction()
+
 // TxFunc ...
 type TxFunc func(db *DB) error
 
