@@ -106,6 +106,9 @@ func (db *DB) Get(dest interface{}, query string, args ...interface{}) error {
 	return err
 }
 
+// RunInTransaction ...
+func (db *DB) RunInTransaction()
+
 // TxFunc ...
 type TxFunc func(db *DB) error
 

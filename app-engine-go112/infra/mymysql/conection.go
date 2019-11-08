@@ -2,6 +2,7 @@ package mymysql
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"os"
 	"time"
@@ -10,15 +11,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var gDB = newDB()
+// GlobalDB ...
+var GlobalDB = newDB()
 
-// DB ...
-type DB struct {
-	*sqlx.DB
-	txMap map[string]*sqlx.Tx
+// Queryer ...
+type Queryer interface {
+	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func newDB() *DB {
+type queryer struct {
+	Queryer
+}
+
+func newDB() Queryer {
 	var (
 		host     = os.Getenv("DB_HOST")
 		port     = os.Getenv("DB_PORT")
@@ -51,9 +59,8 @@ func newDB() *DB {
 	dbx.SetMaxIdleConns(30)
 	dbx.SetConnMaxLifetime(60 * time.Second)
 
-	return &DB{
-		DB:    dbx,
-		txMap: make(map[string]*sqlx.Tx),
+	return &queryer{
+		Queryer: dbx,
 	}
 }
 
@@ -61,15 +68,16 @@ func newDB() *DB {
 type TxFunc func(context.Context) error
 
 // RunInTransaction ...
-func (db *DB) RunInTransaction(ctx context.Context, fn TxFunc) error {
-	return db.runTransaction(ctx, fn)
+func RunInTransaction(ctx context.Context, fn TxFunc) error {
+	// if _, ok :=
+	return runTransaction(ctx, fn)
 }
 
-func (db *DB) runTransaction(ctx context.Context, fn TxFunc) error {
+func runTransaction(ctx context.Context, fn TxFunc) error {
 	return nil
 }
 
-func (db *DB) isInTransaction(ctx context.Context) bool {
+func (q *queryer) isInTransaction(ctx context.Context) bool {
 	if val, ok := ctx.Value("isInTransaction").(bool); ok {
 		return val
 	}
