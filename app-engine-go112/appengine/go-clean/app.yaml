@@ -1,2 +1,9 @@
 service: go-clean
 runtime: go111
+
+env_variables:
+  DB_HOST: '127.0.0.1'
+  DB_PORT: '3306'
+  DB_USER: 'devuser'
+  DB_NAME: 'myproject'
+  DB_PASSWORD: 'Passw0rd!'

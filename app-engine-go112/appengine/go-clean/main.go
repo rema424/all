@@ -13,6 +13,7 @@ import (
 	"myproject/appengine/go-clean/controller"
 	"myproject/appengine/go111/handler"
 	"myproject/domain/user"
+	"myproject/gateway"
 	"myproject/infra/mux"
 )
 
@@ -22,7 +23,8 @@ import (
 var e = mux.CreateMux()
 
 func init() {
-	ui := user.NewInteractor(nil)
+	ug := gateway.NewUserGateway()
+	ui := user.NewInteractor(ug)
 	uc := controller.NewUserController(ui)
 	e.GET("/", handler.HandleHello)
 	e.POST("/users", uc.Register)

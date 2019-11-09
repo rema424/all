@@ -7,7 +7,7 @@ create user devuser@localhost identified by 'Passw0rd!';
 -- grant
 grant all privileges on myproject.* to devuser@localhost;
 
-
+-- table
 create table if not exists user (
   id int auto_increment,
   name varchar(255),
@@ -19,4 +19,4 @@ create table if not exists favorite_food (
   user_id int,
   primary key (id),
   foreign key (user_id) references user (id) on update cascade on delete set null
-)
+);
