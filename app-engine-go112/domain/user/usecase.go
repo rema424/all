@@ -39,5 +39,8 @@ func (i *Interactor) Register(ctx context.Context, user User) (User, error) {
 	}
 
 	v, err := i.repo.RunInTx(ctx, txFn)
-	return v.(User), err
+	if u, ok := v.(User); ok {
+		return u, nil
+	}
+	return u, err
 }

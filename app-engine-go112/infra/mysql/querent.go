@@ -19,17 +19,35 @@ const (
 )
 
 var (
-	globalDB      *sqlx.DB = newDB()
-	globalQuerent *Querent = newQuerent(globalDB)
+	globalDB      *sqlx.DB
+	globalQuerent *querent
 )
 
-// Querent ...
-type Querent struct {
-	Executor // *sqlx.DB or *sqlx.Tx
+// Open ...
+func Open() {
+	globalDB = newDB()
+	globalQuerent = newQuerent(globalDB)
+	log.Println("db opened successfully")
 }
 
-// Executor ...
-type Executor interface {
+// Close ...
+func Close() {
+	if globalDB == nil {
+		log.Println("failed to close db - err: db is nil")
+		return
+	}
+
+	if err := globalDB.Close(); err != nil {
+		log.Println("failed to close db - err:", err.Error())
+	}
+	log.Println("db closed successfully")
+}
+
+type querent struct {
+	executor executor // *sqlx.DB or *sqlx.Tx
+}
+
+type executor interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error
 	Exec(query string, args ...interface{}) (sql.Result, error)
@@ -73,36 +91,28 @@ func newDB() *sqlx.DB {
 	return dbx
 }
 
-func newQuerent(e Executor) *Querent {
-	return &Querent{e}
+func newQuerent(e executor) *querent {
+	return &querent{e}
 }
 
-func getQuerent(ctx context.Context) *Querent {
+func getQuerent(ctx context.Context) (*querent, error) {
 	fmt.Println("start infra mysql getQuerent")
-	val, ok := ctx.Value(querentKey).(*Querent)
-	if ok && val != nil && val.Executor != nil {
-		return val
+	val, ok := ctx.Value(querentKey).(*querent)
+	if ok && val != nil && val.executor != nil {
+		return val, nil
 	}
-	return globalQuerent
+
+	if globalQuerent != nil {
+		return globalQuerent, nil
+	}
+
+	return nil, fmt.Errorf("db not opened")
 }
 
-func setQuerent(ctx context.Context, q *Querent) (context.Context, error) {
+func setQuerent(ctx context.Context, q *querent) (context.Context, error) {
 	fmt.Println("start infra mysql setQuerent")
 	if q == nil {
 		return ctx, fmt.Errorf("receive invalid querent")
 	}
 	return context.WithValue(ctx, querentKey, q), nil
-}
-
-// Close ...
-func Close() {
-	if globalDB == nil {
-		log.Println("failed to close db - err: db is nil")
-		return
-	}
-
-	if err := globalDB.Close(); err != nil {
-		log.Println("failed to close db - err:", err.Error())
-	}
-	log.Println("successfully closed db")
 }

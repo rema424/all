@@ -32,6 +32,7 @@ func init() {
 }
 
 func main() {
+	mysql.Open()
 	defer mysql.Close()
 	http.Handle("/", e)
 
