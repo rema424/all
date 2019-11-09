@@ -4,7 +4,7 @@ import "context"
 
 // Repository ...
 type Repository interface {
-	RunInTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	RunInTx(context.Context, func(context.Context) (interface{}, error)) (interface{}, error)
 	RegisterProfile(ctx context.Context, user User) (User, error)
-	RegisterIcon(ctx context.Context, user User) (User, error)
+	RegisterFoods(ctx context.Context, user User) (User, error)
 }
