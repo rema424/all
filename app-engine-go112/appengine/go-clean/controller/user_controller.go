@@ -21,6 +21,8 @@ func NewUserController(ui *user.Interactor) *UserController {
 
 // Register ...
 func (uc *UserController) Register(c echo.Context) error {
+	fmt.Println("start user controller Register")
+
 	// curl -X POST localhost:8080/users -H 'Content-type: application/json' -d '{"name":"Alice", "foods":["apple", "banana"]}'
 	in := struct {
 		Name  string   `json:"name"`
@@ -32,17 +34,22 @@ func (uc *UserController) Register(c echo.Context) error {
 	}
 	fmt.Println(in.Name, in.Foods)
 
-	// ctx := c.Request().Context()
+	foods := make([]user.Food, len(in.Foods))
+	for i, food := range in.Foods {
+		foods[i] = user.Food{Name: food}
+	}
+
 	u := user.User{
 		Name:  in.Name,
-		Foods: in.Foods,
+		Foods: foods,
 	}
-	// var err error
 
-	// u, err = uc.ui.Register(ctx, u)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err.Error())
-	// }
+	var err error
+	ctx := c.Request().Context()
+	u, err = uc.ui.Register(ctx, u)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
 
 	return c.JSON(http.StatusOK, u)
 }

@@ -1,6 +1,9 @@
 package user
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Interactor ...
 type Interactor struct {
@@ -14,6 +17,9 @@ func NewInteractor(r Repository) *Interactor {
 
 // Register ...
 func (i *Interactor) Register(ctx context.Context, user User) (User, error) {
+	fmt.Println("start user usecase Register")
+	defer fmt.Println("finish user usecase Register")
+
 	var u User
 
 	txFn := func(ctx context.Context) (interface{}, error) {

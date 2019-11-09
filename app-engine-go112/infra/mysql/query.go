@@ -11,26 +11,31 @@ import (
 
 // Get ...
 func Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+	fmt.Println("start infra mysql Get")
 	return getQuerent(ctx).Executor.Get(dest, query, args...)
 }
 
 // Select ...
 func Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+	fmt.Println("start infra mysql Select")
 	return getQuerent(ctx).Executor.Select(dest, query, args...)
 }
 
 // Exec ...
 func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	fmt.Println("start infra mysql Exec")
 	return getQuerent(ctx).Executor.Exec(query, args...)
 }
 
 // NamedExec ...
 func NamedExec(ctx context.Context, query string, arg interface{}) (sql.Result, error) {
+	fmt.Println("start infra mysql NamedExec")
 	return getQuerent(ctx).Executor.NamedExec(query, arg)
 }
 
 // Query ...
 func Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	fmt.Println("start infra mysql Query")
 	return getQuerent(ctx).Executor.Query(query, args...)
 }
 
@@ -39,6 +44,8 @@ type TxFunc func(context.Context) (interface{}, error)
 
 // RunInTx ...
 func RunInTx(ctx context.Context, txFn TxFunc) (interface{}, error) {
+	fmt.Println("start infra mysql RunInTx")
+	defer fmt.Println("finish infra mysql RunInTx")
 	tx, ok := getQuerent(ctx).Executor.(*sqlx.Tx)
 	if !ok || tx == nil {
 		var err error

@@ -17,6 +17,7 @@ create table if not exists user (
 create table if not exists favorite_food (
   id int auto_increment,
   user_id int,
+  name varchar(255),
   primary key (id),
   foreign key (user_id) references user (id) on update cascade on delete set null
 );

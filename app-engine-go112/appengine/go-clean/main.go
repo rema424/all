@@ -15,6 +15,7 @@ import (
 	"myproject/domain/user"
 	"myproject/gateway"
 	"myproject/infra/mux"
+	"myproject/infra/mysql"
 )
 
 // [END import]
@@ -31,6 +32,7 @@ func init() {
 }
 
 func main() {
+	defer mysql.Close()
 	http.Handle("/", e)
 
 	// [START setting_port]

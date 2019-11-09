@@ -78,6 +78,7 @@ func newQuerent(e Executor) *Querent {
 }
 
 func getQuerent(ctx context.Context) *Querent {
+	fmt.Println("start infra mysql getQuerent")
 	val, ok := ctx.Value(querentKey).(*Querent)
 	if ok && val != nil && val.Executor != nil {
 		return val
@@ -86,6 +87,7 @@ func getQuerent(ctx context.Context) *Querent {
 }
 
 func setQuerent(ctx context.Context, q *Querent) (context.Context, error) {
+	fmt.Println("start infra mysql setQuerent")
 	if q == nil {
 		return ctx, fmt.Errorf("receive invalid querent")
 	}
