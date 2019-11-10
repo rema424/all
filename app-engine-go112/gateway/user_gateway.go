@@ -5,18 +5,18 @@ import (
 	"fmt"
 
 	"myproject/domain/user"
-	"myproject/infra/mysql"
+	"myproject/infra/sqlxx"
 
 	"github.com/jmoiron/sqlx"
 )
 
 // UserGateway ...
 type UserGateway struct {
-	mysql *mysql.Accessor
+	mysql *sqlxx.Accessor
 }
 
 // NewUserGateway ...
-func NewUserGateway(mysql *mysql.Accessor) *UserGateway {
+func NewUserGateway(mysql *sqlxx.Accessor) *UserGateway {
 	return &UserGateway{mysql}
 }
 
@@ -55,7 +55,7 @@ func (ug *UserGateway) RegisterFoods(ctx context.Context, u user.User) (user.Use
 
 	// BulkInsert するレコードの数だけ (?), (?), (?)... を作る
 	q := `INSERT INTO favorite_food (user_id, name) VALUES %s`
-	q = fmt.Sprintf(q, mysql.MakeBulkInsertBindVars(cnt))
+	q = fmt.Sprintf(q, sqlxx.MakeBulkInsertBindVars(cnt))
 
 	records := make([]interface{}, cnt)
 	for i, food := range u.Foods {

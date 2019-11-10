@@ -11,13 +11,14 @@ import (
 	"myproject/gateway"
 	"myproject/infra/mux"
 	"myproject/infra/mysql"
+	"myproject/infra/sqlxx"
 
 	"github.com/labstack/echo/v4"
 )
 
 var (
-	e *echo.Echo = mux.CreateMux()
-	a *mysql.Accessor
+	e      *echo.Echo = mux.CreateMux()
+	accssr *sqlxx.Accessor
 )
 
 func init() {
@@ -35,9 +36,19 @@ func init() {
 		ConnMaxLifetime:      -1, // use default value
 	}
 
-	a = mysql.Open(c)
+	dbx, err := mysql.Open(c)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("db opened successfully")
 
-	ug := gateway.NewUserGateway(a)
+	accssr, err = sqlxx.Open(dbx)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("accessor opened successfully")
+
+	ug := gateway.NewUserGateway(accssr)
 	ui := user.NewInteractor(ug)
 	uc := controller.NewUserController(ui)
 
@@ -47,7 +58,7 @@ func init() {
 
 func main() {
 	http.Handle("/", e)
-	defer a.Close()
+	defer accssr.Close()
 
 	port := os.Getenv("PORT")
 	if port == "" {

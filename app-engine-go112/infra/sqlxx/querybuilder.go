@@ -1,4 +1,4 @@
-package mysql
+package sqlxx
 
 import "strings"
 
