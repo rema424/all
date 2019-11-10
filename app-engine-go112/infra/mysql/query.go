@@ -10,80 +10,76 @@ import (
 )
 
 // Get ...
-func Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	fmt.Println("start infra mysql Get")
-	q, err := getQuerent(ctx)
-	if err != nil {
+func (a *Accessor) Get(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+	if err := a.validate(); err != nil {
 		return err
 	}
-	return q.executor.Get(dest, query, args...)
+	return a.build(ctx).querent.Get(dest, query, args...)
 }
 
 // Select ...
-func Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
-	fmt.Println("start infra mysql Select")
-	q, err := getQuerent(ctx)
-	if err != nil {
+func (a *Accessor) Select(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+	if err := a.validate(); err != nil {
 		return err
 	}
-	return q.executor.Select(dest, query, args...)
+	return a.build(ctx).querent.Select(dest, query, args...)
 }
 
 // Exec ...
-func Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	fmt.Println("start infra mysql Exec")
-	q, err := getQuerent(ctx)
-	if err != nil {
+func (a *Accessor) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	if err := a.validate(); err != nil {
 		return nil, err
 	}
-	return q.executor.Exec(query, args...)
+	return a.build(ctx).querent.Exec(query, args...)
 }
 
 // NamedExec ...
-func NamedExec(ctx context.Context, query string, arg interface{}) (sql.Result, error) {
-	fmt.Println("start infra mysql NamedExec")
-	q, err := getQuerent(ctx)
-	if err != nil {
+func (a *Accessor) NamedExec(ctx context.Context, query string, arg interface{}) (sql.Result, error) {
+	if err := a.validate(); err != nil {
 		return nil, err
 	}
-	return q.executor.NamedExec(query, arg)
+	return a.build(ctx).querent.NamedExec(query, arg)
 }
 
 // Query ...
-func Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	fmt.Println("start infra mysql Query")
-	q, err := getQuerent(ctx)
-	if err != nil {
+func (a *Accessor) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	if err := a.validate(); err != nil {
 		return nil, err
 	}
-	return q.executor.Query(query, args...)
+	return a.build(ctx).querent.Query(query, args...)
 }
 
 // TxFunc ...
 type TxFunc func(context.Context) (interface{}, error)
 
 // RunInTx ...
-func RunInTx(ctx context.Context, txFn TxFunc) (interface{}, error) {
+func (a *Accessor) RunInTx(ctx context.Context, txFn TxFunc) (interface{}, error) {
 	fmt.Println("start infra mysql RunInTx")
 	defer fmt.Println("finish infra mysql RunInTx")
 
-	q, err := getQuerent(ctx)
-	if err != nil {
+	if err := a.validate(); err != nil {
 		return nil, err
 	}
 
-	tx, ok := q.executor.(*sqlx.Tx)
+	a = a.build(ctx)
+
+	tx, ok := a.querent.(*sqlx.Tx)
 	if !ok || tx == nil {
 		var err error
 
 		// トランザクションを取得
-		tx, err = globalDB.Beginx()
+		dbx, ok := a.querent.(*sqlx.DB)
+		if !ok || dbx == nil {
+			return nil, fmt.Errorf("failed to begin transaction - invalid dbx")
+		}
+
+		tx, err = dbx.Beginx()
 		if err != nil {
 			return nil, err
 		}
 
 		// コンテキストにトランザクションを格納
-		ctx, err = setQuerent(ctx, newQuerent(tx))
+		ctx, err = set(ctx, newAccessor(tx))
 		if err != nil {
 			return nil, err
 		}

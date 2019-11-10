@@ -1,9 +1,5 @@
-// [START gae_go111_app]
-
-// Sample helloworld is an App Engine app.
 package main
 
-// [START import]
 import (
 	"fmt"
 	"log"
@@ -11,32 +7,48 @@ import (
 	"os"
 
 	"myproject/appengine/go-clean/controller"
-	"myproject/appengine/go111/handler"
 	"myproject/domain/user"
 	"myproject/gateway"
 	"myproject/infra/mux"
 	"myproject/infra/mysql"
+
+	"github.com/labstack/echo/v4"
 )
 
-// [END import]
-// [START main_func]
-
-var e = mux.CreateMux()
+var (
+	e *echo.Echo = mux.CreateMux()
+	a *mysql.Accessor
+)
 
 func init() {
-	ug := gateway.NewUserGateway()
+	c := mysql.Config{
+		Host:                 os.Getenv("DB_HOST"),
+		Port:                 os.Getenv("DB_PORT"),
+		User:                 os.Getenv("DB_USER"),
+		DBName:               os.Getenv("DB_NAME"),
+		Passwd:               os.Getenv("DB_PASSWORD"),
+		InterpolateParams:    true,
+		AllowNatevePasswords: true,
+		ParseTime:            true,
+		MaxOpenConns:         -1, // use default value
+		MaxIdleConns:         -1, // use default value
+		ConnMaxLifetime:      -1, // use default value
+	}
+
+	a = mysql.Open(c)
+
+	ug := gateway.NewUserGateway(a)
 	ui := user.NewInteractor(ug)
 	uc := controller.NewUserController(ui)
-	e.GET("/", handler.HandleHello)
+
+	e.GET("/", func(c echo.Context) error { return c.String(http.StatusOK, "Hello, World.") })
 	e.POST("/users", uc.Register)
 }
 
 func main() {
-	mysql.Open()
-	defer mysql.Close()
 	http.Handle("/", e)
+	defer a.Close()
 
-	// [START setting_port]
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -45,14 +57,4 @@ func main() {
 
 	log.Printf("Listening on port %s", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
-	// [END setting_port]
 }
-
-// [END main_func]
-
-// [START indexHandler]
-
-// indexHandler responds to requests with our greeting.
-
-// [END indexHandler]
-// [END gae_go111_app]

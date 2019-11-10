@@ -11,25 +11,27 @@ import (
 )
 
 // UserGateway ...
-type UserGateway struct{}
+type UserGateway struct {
+	mysql *mysql.Accessor
+}
 
 // NewUserGateway ...
-func NewUserGateway() *UserGateway {
-	return &UserGateway{}
+func NewUserGateway(mysql *mysql.Accessor) *UserGateway {
+	return &UserGateway{mysql}
 }
 
 // RunInTx ...
 func (ug *UserGateway) RunInTx(ctx context.Context, fn func(ctx context.Context) (interface{}, error)) (interface{}, error) {
 	fmt.Println("start user gateway RunInTx")
 	defer fmt.Println("finish user gateway RunInTx")
-	return mysql.RunInTx(ctx, fn)
+	return ug.mysql.RunInTx(ctx, fn)
 }
 
 // RegisterProfile ...
 func (ug *UserGateway) RegisterProfile(ctx context.Context, user user.User) (user.User, error) {
 	fmt.Println("start user gateway RegisterProfile")
 	q := `INSERT INTO user (name) values (:asdfgh)`
-	res, err := mysql.NamedExec(ctx, q, user)
+	res, err := ug.mysql.NamedExec(ctx, q, user)
 	if err != nil {
 		return user, err
 	}
@@ -67,19 +69,18 @@ func (ug *UserGateway) RegisterFoods(ctx context.Context, u user.User) (user.Use
 		return u, err
 	}
 
-	res, err := mysql.Exec(ctx, q, args...)
+	res, err := ug.mysql.Exec(ctx, q, args...)
 	if err != nil {
 		return u, err
 	}
 
-	headID, err := res.LastInsertId()
+	id, err := res.LastInsertId()
 	if err != nil {
 		return u, err
 	}
 
-	for i, food := range u.Foods {
-		food.ID = headID + int64(i)
-		u.Foods[i] = food
+	for i := range u.Foods {
+		u.Foods[i].ID = id + int64(i)
 	}
 
 	return u, nil

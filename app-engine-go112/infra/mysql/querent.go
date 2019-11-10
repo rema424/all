@@ -5,49 +5,18 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	my "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
-type ctxValKey string
-
-const (
-	querentKey ctxValKey = "querent-key"
-)
-
-var (
-	globalDB      *sqlx.DB
-	globalQuerent *querent
-)
-
-// Open ...
-func Open() {
-	globalDB = newDB()
-	globalQuerent = newQuerent(globalDB)
-	log.Println("db opened successfully")
+// Accessor ...
+type Accessor struct {
+	querent querent // *sqlx.DB or *sqlx.Tx
 }
 
-// Close ...
-func Close() {
-	if globalDB == nil {
-		log.Println("failed to close db - err: db is nil")
-		return
-	}
-
-	if err := globalDB.Close(); err != nil {
-		log.Println("failed to close db - err:", err.Error())
-	}
-	log.Println("db closed successfully")
-}
-
-type querent struct {
-	executor executor // *sqlx.DB or *sqlx.Tx
-}
-
-type executor interface {
+type querent interface {
 	Get(dest interface{}, query string, args ...interface{}) error
 	Select(dest interface{}, query string, args ...interface{}) error
 	Exec(query string, args ...interface{}) (sql.Result, error)
@@ -55,64 +24,144 @@ type executor interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func newDB() *sqlx.DB {
-	var (
-		host     = os.Getenv("DB_HOST")
-		port     = os.Getenv("DB_PORT")
-		user     = os.Getenv("DB_USER")
-		dbName   = os.Getenv("DB_NAME")     // NOTE: dbName may be empty
-		password = os.Getenv("DB_PASSWORD") // NOTE: password may be empty
-	)
+// Config ...
+type Config struct {
+	User                 string
+	Passwd               string
+	Host                 string
+	Port                 string
+	Net                  string
+	Addr                 string
+	DBName               string
+	Collation            string
+	InterpolateParams    bool
+	AllowNatevePasswords bool
+	ParseTime            bool
+	MaxOpenConns         int
+	MaxIdleConns         int
+	ConnMaxLifetime      time.Duration
+}
 
-	cfg := my.Config{
-		User:                 user,
-		Passwd:               password,
-		Net:                  "tcp",
-		Addr:                 host + ":" + port,
-		DBName:               dbName,
-		Collation:            "utf8mb4_bin",
-		InterpolateParams:    true,
-		AllowNativePasswords: true,
-		ParseTime:            true,
+func (c Config) build() Config {
+	// var (
+	// 	host     = os.Getenv("DB_HOST")
+	// 	port     = os.Getenv("DB_PORT")
+	// 	user     = os.Getenv("DB_USER")
+	// 	dbName   = os.Getenv("DB_NAME")     // NOTE: dbName may be empty
+	// 	password = os.Getenv("DB_PASSWORD") // NOTE: password may be empty
+	// )
+	if c.User == "" {
+		c.User = "root"
+	}
+	if c.Net == "" {
+		c.Net = "tcp"
+	}
+	if c.Host == "" {
+		c.Host = "127.0.0.1"
+	}
+	if c.Port == "" {
+		c.Port = "3306"
+	}
+	if c.Addr == "" {
+		c.Addr = c.Host + ":" + c.Port
+	}
+	if c.Collation == "" {
+		c.Collation = "utf8mb4_bin"
+	}
+	if c.MaxOpenConns < 0 {
+		c.MaxOpenConns = 30
+	}
+	if c.MaxIdleConns < 0 {
+		c.MaxIdleConns = 30
+	}
+	if c.ConnMaxLifetime < 0 {
+		c.ConnMaxLifetime = 60 * time.Second
+	}
+	return c
+}
+
+func newDB(c Config) *sqlx.DB {
+	c = c.build()
+
+	mycfg := my.Config{
+		User:                 c.User,
+		Passwd:               c.Passwd,
+		Net:                  c.Net,
+		Addr:                 c.Addr,
+		DBName:               c.DBName,
+		Collation:            c.Collation,
+		InterpolateParams:    c.InterpolateParams,
+		AllowNativePasswords: c.AllowNatevePasswords,
+		ParseTime:            c.ParseTime,
 	}
 
-	dbx, err := sqlx.Open("mysql", cfg.FormatDSN())
+	dbx, err := sqlx.Open("mysql", mycfg.FormatDSN())
 	if err != nil {
 		log.Fatalln(err)
 	}
 	if err := dbx.Ping(); err != nil {
 		log.Fatalln(err)
 	}
+	log.Println("db opened successfully")
 
-	dbx.SetMaxOpenConns(30)
-	dbx.SetMaxIdleConns(30)
-	dbx.SetConnMaxLifetime(60 * time.Second)
+	dbx.SetMaxOpenConns(c.MaxOpenConns)
+	dbx.SetMaxIdleConns(c.MaxIdleConns)
+	dbx.SetConnMaxLifetime(c.ConnMaxLifetime)
 
 	return dbx
 }
 
-func newQuerent(e executor) *querent {
-	return &querent{e}
+func newAccessor(q querent) *Accessor {
+	return &Accessor{q}
 }
 
-func getQuerent(ctx context.Context) (*querent, error) {
-	fmt.Println("start infra mysql getQuerent")
-	val, ok := ctx.Value(querentKey).(*querent)
-	if ok && val != nil && val.executor != nil {
-		return val, nil
-	}
-
-	if globalQuerent != nil {
-		return globalQuerent, nil
-	}
-
-	return nil, fmt.Errorf("db not opened")
+// Open ...
+func Open(c Config) *Accessor {
+	return newAccessor(newDB(c))
 }
 
-func setQuerent(ctx context.Context, q *querent) (context.Context, error) {
-	fmt.Println("start infra mysql setQuerent")
-	if q == nil {
-		return ctx, fmt.Errorf("receive invalid querent")
+// Close ...
+func (a *Accessor) Close() error {
+	if err := a.validate(); err != nil {
+		return fmt.Errorf("failed to close db - %s", err.Error())
 	}
-	return context.WithValue(ctx, querentKey, q), nil
+
+	dbx, ok := a.querent.(*sqlx.DB)
+	if !ok || dbx == nil {
+		return fmt.Errorf("failed to close db - invalid dbx")
+	}
+
+	if err := dbx.Close(); err != nil {
+		return fmt.Errorf("failed to close db - %s", err.Error())
+	}
+
+	log.Println("db closed successfully")
+	return nil
+}
+
+type ctxValKey string
+
+const (
+	accessorKey ctxValKey = "accessor-key"
+)
+
+func set(ctx context.Context, a *Accessor) (context.Context, error) {
+	if err := a.validate(); err != nil {
+		return ctx, err
+	}
+	return context.WithValue(ctx, accessorKey, a), nil
+}
+
+func (a *Accessor) build(ctx context.Context) *Accessor {
+	if val, ok := ctx.Value(accessorKey).(*Accessor); ok {
+		return val
+	}
+	return a
+}
+
+func (a *Accessor) validate() error {
+	if a == nil || a.querent == nil {
+		return fmt.Errorf("invalid mysql accessor")
+	}
+	return nil
 }
