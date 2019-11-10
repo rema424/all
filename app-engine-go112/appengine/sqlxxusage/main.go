@@ -20,11 +20,11 @@ create table if not exists person (
 var schema2 = `
 create table if not exists favorite_food (
   id bigint auto_increment,
-  user_id bigint,
+  person_id bigint,
   name varchar(255),
   primary key (id),
-  unique (user_id, name),
-  foreign key (user_id) references person (id) on update cascade on delete set null
+  unique (person_id, name),
+  foreign key (person_id) references person (id) on update cascade on delete set null
 );`
 
 // Person .
@@ -36,9 +36,9 @@ type Person struct {
 
 // Food .
 type Food struct {
-	ID     int64  `db:"zxcvbn"`
-	UserID int64  `db:"uiopjkl"`
-	Name   string `db:"yhnujm"`
+	ID       int64  `db:"zxcvbn"`
+	PersonID int64  `db:"uiopjkl"`
+	Name     string `db:"yhnujm"`
 }
 
 func main() {
@@ -74,9 +74,9 @@ func main() {
 		}
 		p.ID = pid
 
-		q2 := `insert into favorite_food (user_id, name) values (:uiopjkl, :yhnujm);`
+		q2 := `insert into favorite_food (person_id, name) values (:uiopjkl, :yhnujm);`
 		for i := range p.Foods {
-			p.Foods[i].UserID = pid
+			p.Foods[i].PersonID = pid
 			res, err := accssr.NamedExec(ctx, q2, p.Foods[i])
 			if err != nil {
 				return nil, err // if err returned, rollback
@@ -106,14 +106,14 @@ func main() {
 		//   Name:  "Alice",
 		//   Foods: []main.Food{
 		//     main.Food{
-		//       ID:     1,
-		//       UserID: 1,
-		//       Name:   "apple",
+		//       ID:       1,
+		//       PersonID: 1,
+		//       Name:     "apple",
 		//     },
 		//     main.Food{
-		//       ID:     2,
-		//       UserID: 1,
-		//       Name:   "banana",
+		//       ID:       2,
+		//       PersonID: 1,
+		//       Name:     "banana",
 		//     },
 		//   },
 		// }
