@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"fmt"
 	"time"
 
 	my "github.com/go-sql-driver/mysql"
@@ -78,13 +79,10 @@ func Open(c Config) (*sqlx.DB, error) {
 		AllowNativePasswords: c.AllowNatevePasswords,
 		ParseTime:            c.ParseTime,
 	}
+	fmt.Println(mycfg.FormatDSN())
 
-	dbx, err := sqlx.Open("mysql", mycfg.FormatDSN())
+	dbx, err := sqlx.Connect("mysql", mycfg.FormatDSN())
 	if err != nil {
-		return nil, err
-	}
-
-	if err := dbx.Ping(); err != nil {
 		return nil, err
 	}
 
