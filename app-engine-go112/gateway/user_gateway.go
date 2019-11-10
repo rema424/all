@@ -3,11 +3,12 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"myproject/domain/user"
-	"myproject/infra/sqlxx"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/rema424/sqlxx"
 )
 
 // UserGateway ...
@@ -24,7 +25,11 @@ func NewUserGateway(mysql *sqlxx.Accessor) *UserGateway {
 func (ug *UserGateway) RunInTx(ctx context.Context, fn func(ctx context.Context) (interface{}, error)) (interface{}, error) {
 	fmt.Println("start user gateway RunInTx")
 	defer fmt.Println("finish user gateway RunInTx")
-	return ug.mysql.RunInTx(ctx, fn)
+	v, err, rlbkErr := ug.mysql.RunInTx(ctx, fn)
+	if rlbkErr != nil {
+		log.Printf("failed to rollback - err: %s\n", rlbkErr.Error())
+	}
+	return v, err
 }
 
 // RegisterProfile ...

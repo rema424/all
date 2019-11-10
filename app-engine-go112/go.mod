@@ -6,5 +6,6 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/labstack/echo/v4 v4.1.11
+	github.com/rema424/sqlxx v0.0.0-20191110144531-64f6020cf1f6
 	google.golang.org/appengine v1.6.5
 )

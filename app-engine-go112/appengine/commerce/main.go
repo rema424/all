@@ -10,18 +10,17 @@ import (
 	"net/http"
 	"os"
 
-	"myproject/appengine/commerce/controller"
-	"myproject/infra/component"
+	"myproject/infra/mux"
 )
 
 // [END import]
 // [START main_func]
 
-var app = component.App
+var app = mux.CreateMux()
 
 func init() {
 	// curl -X POST -H 'Content-Type: application/json' -d '{"orderDetails": [{ "itemId": 901, "quantity": 2 }, { "itemId": 902, "quantity": 2 }, { "itemId": 903, "quantity": 2 }], "customer": { "name": "Alice", "phoneNumber": "XXX-XXXX-XXXX" }, "employee": { "id": 101 }}' localhost:8080
-	app.POST("/", controller.HandleMakeReservation)
+	// app.POST("/", controller.HandleMakeReservation)
 }
 
 func main() {

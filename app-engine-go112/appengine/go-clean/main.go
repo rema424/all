@@ -11,9 +11,9 @@ import (
 	"myproject/gateway"
 	"myproject/infra/mux"
 	"myproject/infra/mysql"
-	"myproject/infra/sqlxx"
 
 	"github.com/labstack/echo/v4"
+	"github.com/rema424/sqlxx"
 )
 
 var (
