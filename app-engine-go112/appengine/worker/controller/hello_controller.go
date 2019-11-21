@@ -1,4 +1,4 @@
-package handler
+package controller
 
 import (
 	"net/http"
@@ -8,7 +8,5 @@ import (
 
 // HandleHello ...
 func HandleHello(c echo.Context) error {
-	// ctx := c.Request().Context()
-	// ctx
-	return c.String(http.StatusOK, "Hello, World! go111")
+	return c.String(http.StatusOK, "Hello, World!")
 }

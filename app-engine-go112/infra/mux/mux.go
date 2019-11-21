@@ -1,14 +1,12 @@
-package component
+package mux
 
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// App ...
-var App = createMux()
-
-func createMux() *echo.Echo {
+// CreateMux ...
+func CreateMux() *echo.Echo {
 	e := echo.New()
 
 	e.Use(middleware.Recover())

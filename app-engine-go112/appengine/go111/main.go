@@ -7,8 +7,8 @@ package main
 import (
 	"net/http"
 
-	"myproject/appengine/go111/handler"
-	"myproject/infra/component"
+	"myproject/appengine/go111/controller"
+	"myproject/infra/mux"
 
 	"google.golang.org/appengine"
 )
@@ -16,10 +16,10 @@ import (
 // [END import]
 // [START main_func]
 
-var app = component.App
+var app = mux.CreateMux()
 
 func init() {
-	app.GET("/", handler.HandleHello)
+	app.GET("/", controller.HandleHello)
 }
 
 func main() {

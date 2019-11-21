@@ -1,10 +1,13 @@
 package user
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Interactor ...
 type Interactor struct {
-	Repository Repository
+	repo Repository
 }
 
 // NewInteractor ...
@@ -14,18 +17,30 @@ func NewInteractor(r Repository) *Interactor {
 
 // Register ...
 func (i *Interactor) Register(ctx context.Context, user User) (User, error) {
+	fmt.Println("start user usecase Register")
+	defer fmt.Println("finish user usecase Register")
+
 	var u User
 
-	transactionFunc := func(ctx context.Context) error {
+	txFn := func(ctx context.Context) (interface{}, error) {
 		var err error
-		u, err = i.Repository.RegisterProfile(ctx, user)
+
+		u, err = i.repo.RegisterProfile(ctx, user)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		u, err = i.Repository.RegisterProfile(ctx, u)
-		return err
+
+		u, err = i.repo.RegisterFoods(ctx, u)
+		if err != nil {
+			return nil, err
+		}
+
+		return u, nil
 	}
 
-	err := i.Repository.RunInTransaction(ctx, transactionFunc)
+	v, err := i.repo.RunInTx(ctx, txFn)
+	if u, ok := v.(User); ok {
+		return u, nil
+	}
 	return u, err
 }

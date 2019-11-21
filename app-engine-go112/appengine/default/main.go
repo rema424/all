@@ -10,17 +10,17 @@ import (
 	"net/http"
 	"os"
 
-	"myproject/appengine/default/handler"
-	"myproject/infra/component"
+	"myproject/appengine/default/controller"
+	"myproject/infra/mux"
 )
 
 // [END import]
 // [START main_func]
 
-var app = component.App
+var app = mux.CreateMux()
 
 func init() {
-	app.GET("/", handler.HandleHello)
+	app.GET("/", controller.HandleHello)
 }
 
 func main() {
