@@ -1,6 +1,8 @@
 package main
 
-import "inter/internal/hello"
+import (
+	"foo/internal/hello"
+)
 
 func main() {
 	hello.Hello()
