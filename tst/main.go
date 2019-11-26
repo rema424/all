@@ -15,27 +15,28 @@ import (
 )
 
 func main() {
-	mux := CreateDefaultMux()
-	http.Handle("/", Route(mux))
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 		log.Printf("Defaulting to port %s", port)
 	}
-
 	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+
+	handler := NewHandler(NewEcho())
+	err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-// Route ...
-func Route(e *echo.Echo) http.Handler {
+// NewHandler ...
+func NewHandler(e *echo.Echo) http.Handler {
 	e.GET("/greet", greet.HandleGreet)
 	return e
 }
 
-// CreateDefaultMux .
-func CreateDefaultMux() *echo.Echo {
+// NewEcho .
+func NewEcho() *echo.Echo {
 	e := echo.New()
 
 	e.Use(middleware.Recover())

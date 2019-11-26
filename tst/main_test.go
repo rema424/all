@@ -8,8 +8,8 @@ import (
 )
 
 func TestRoute(t *testing.T) {
-	mux := CreateDefaultMux()
-	s := httptest.NewServer(Route(mux))
+	handler := NewHandler(NewEcho())
+	s := httptest.NewServer(handler)
 	defer s.Close()
 
 	res, err := http.Get(s.URL + "/greet?name=gopher")
