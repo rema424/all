@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestHandleGreet(t *testing.T) {
+func TestRoute(t *testing.T) {
 	mux := CreateDefaultMux()
 	s := httptest.NewServer(Route(mux))
 	defer s.Close()
@@ -16,8 +16,11 @@ func TestHandleGreet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("http.Get failed: %s", err)
 	}
-	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("res.StatusCode: got: %d, want: %d", res.StatusCode, http.StatusOK)
+	}
 	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
 	if err != nil {
 		t.Fatalf("ioutil.ReadAll failed: %s", err)
 	}
