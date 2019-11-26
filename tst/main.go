@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
-  "regexp"
+	"os"
+	"regexp"
 
-  "tst/services/greet"
+	"tst/services/greet"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -13,22 +16,22 @@ import (
 
 func main() {
 	mux := CreateDefaultMux()
-  http.Handle("/", Route(mux))
+	http.Handle("/", Route(mux))
 
-  port := os.Getenv("PORT")
-  if port == "" {
-      port = "8080"
-      log.Printf("Defaulting to port %s", port)
-  }
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
+	}
 
-  log.Printf("Listening on port %s", port)
-  log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	log.Printf("Listening on port %s", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
 
 // Route ...
 func Route(e *echo.Echo) http.Handler {
-  e.GET("/greet", greet.HandleGreet)
-  return e
+	e.GET("/greet", greet.HandleGreet)
+	return e
 }
 
 // CreateDefaultMux .
