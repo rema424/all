@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"regexp"
 
 	"github.com/go-playground/validator/v10"
@@ -8,8 +10,28 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// CreateMux .
-func CreateMux() *echo.Echo {
+func main() {
+	mux := CreateDefaultMux()
+	http.Handle("/", Route(mux))
+}
+
+// Route ...
+func Route(e *echo.Echo) http.Handler {
+	e.GET("/greet", HandleGreet)
+	return e
+}
+
+// HandleGreet ...
+func HandleGreet(c echo.Context) error {
+	name := c.QueryParam("name")
+	if name == "" {
+		return c.NoContent(http.StatusBadRequest)
+	}
+	return c.String(http.StatusOK, fmt.Sprintf("Hello, %s!", name))
+}
+
+// CreateDefaultMux .
+func CreateDefaultMux() *echo.Echo {
 	e := echo.New()
 
 	e.Use(middleware.Recover())
