@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"regexp"
+  "regexp"
+
+  "tst/services/greet"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -12,22 +13,22 @@ import (
 
 func main() {
 	mux := CreateDefaultMux()
-	http.Handle("/", Route(mux))
+  http.Handle("/", Route(mux))
+
+  port := os.Getenv("PORT")
+  if port == "" {
+      port = "8080"
+      log.Printf("Defaulting to port %s", port)
+  }
+
+  log.Printf("Listening on port %s", port)
+  log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
 
 // Route ...
 func Route(e *echo.Echo) http.Handler {
-	e.GET("/greet", HandleGreet)
-	return e
-}
-
-// HandleGreet ...
-func HandleGreet(c echo.Context) error {
-	name := c.QueryParam("name")
-	if name == "" {
-		return c.NoContent(http.StatusBadRequest)
-	}
-	return c.String(http.StatusOK, fmt.Sprintf("Hello, %s!", name))
+  e.GET("/greet", greet.HandleGreet)
+  return e
 }
 
 // CreateDefaultMux .
