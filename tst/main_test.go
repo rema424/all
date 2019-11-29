@@ -28,17 +28,18 @@ func TestGreetRoutes(t *testing.T) {
 	// テストサーバーの起動
 	s := httptest.NewServer(e)
 	defer s.Close()
+	c := s.Client()
 
 	// リクエスト
-	res, err := http.Get(s.URL + "/greet?name=gopher")
+	resp, err := c.Get(s.URL + "/greet?name=gopher")
 	if err != nil {
 		t.Fatalf("http.Get failed: %s", err)
 	}
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("res.StatusCode: got: %d, want: %d", res.StatusCode, http.StatusOK)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("resp.StatusCode: got: %d, want: %d", resp.StatusCode, http.StatusOK)
 	}
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		t.Fatalf("ioutil.ReadAll failed: %s", err)
 	}
