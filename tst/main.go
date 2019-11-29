@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"tst/services/greet"
+	"tst/services/greeter"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -22,21 +22,24 @@ func main() {
 	}
 	log.Printf("Listening on port %s", port)
 
-	handler := NewHandler(NewEcho())
+	handler := routes(newEcho())
 	err := http.ListenAndServe(fmt.Sprintf(":%s", port), handler)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-// NewHandler ...
-func NewHandler(e *echo.Echo) http.Handler {
-	e.GET("/greet", greet.HandleGreet)
+func routes(e *echo.Echo) http.Handler {
+	p := greeter.NewProvider(nil)
+	greetRoutes(e, p)
 	return e
 }
 
-// NewEcho .
-func NewEcho() *echo.Echo {
+func greetRoutes(e *echo.Echo, p *greeter.Provider) {
+	e.GET("/greet", p.HandleGreet)
+}
+
+func newEcho() *echo.Echo {
 	e := echo.New()
 
 	e.Use(middleware.Recover())

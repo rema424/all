@@ -1,4 +1,4 @@
-package greet
+package greeter
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// HandleGreet ...s
-func HandleGreet(c echo.Context) error {
+// HandleGreet ...
+func (p *Provider) HandleGreet(c echo.Context) error {
 	name := c.QueryParam("name")
 	if name == "" {
 		return c.NoContent(http.StatusBadRequest)
