@@ -13,13 +13,14 @@ var (
 )
 
 func main() {
-	tpl = template.Must(template.ParseGlob("web/template/*"))
+	// tpl = template.Must(template.ParseGlob("web/template/*"))
 
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
+	// r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+	// middleware.
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hello world"))
@@ -28,5 +29,5 @@ func main() {
 }
 
 func HandleHealthCheck(w http.ResponseWriter, r *http.Request) {
-  tpl.
+	// tpl.
 }
