@@ -11,18 +11,33 @@ signup | {{ block.Super }}
 {% endblock %}
 
 {% block content %}
-<h1>サインアップ</h1>
-<form action="/signup" method="post">
-  <p>
-    <label for="email">Email</label>
-    <input type="email" name="email" id="email">
-  </p>
-  <p>
-    <label for="password">Password</label>
-    <input type="password" name="password" id="password">
-  </p>
-  <p>
-    <input type="submit" value="send">
-  </p>
-</form>
+<section>
+  <h1>サインアップ</h1>
+  {% if Errors|length != 0 %}
+  <section>
+    <h2>エラー</h2>
+    <ul>
+      {% for err in Errors %}
+      <li>{{err.Message}}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  <section>
+    <h2>フォーム</h2>
+    <form action="/signup" method="post">
+      <p>
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email">
+      </p>
+      <p>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password">
+      </p>
+      <p>
+        <input type="submit" value="send">
+      </p>
+    </form>
+  </section>
+</section>
 {% endblock  %}
