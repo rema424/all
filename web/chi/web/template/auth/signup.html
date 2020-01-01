@@ -1,0 +1,28 @@
+{% extends "../layout.html" %}
+
+{% block css %}
+{% endblock %}
+
+{% block js %}
+{% endblock %}
+
+{% block title %}
+signup | {{ block.Super }}
+{% endblock %}
+
+{% block content %}
+<h1>サインアップ</h1>
+<form action="/signup" method="post">
+  <p>
+    <label for="email">Email</label>
+    <input type="email" name="email" id="email">
+  </p>
+  <p>
+    <label for="password">Password</label>
+    <input type="password" name="password" id="password">
+  </p>
+  <p>
+    <input type="submit" value="send">
+  </p>
+</form>
+{% endblock  %}
