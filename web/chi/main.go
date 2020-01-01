@@ -1,33 +1,46 @@
 package main
 
 import (
-	"html/template"
+	"chappie/renderer"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
 var (
-	tpl *template.Template
+	ren = renderer.New("web/template")
 )
 
 func main() {
-	// tpl = template.Must(template.ParseGlob("web/template/*"))
-
 	r := chi.NewRouter()
-	// r.Use(middleware.RequestID)
+	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	// middleware.
-
+	r.Use(middleware.Heartbeat("/ping"))
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
-	http.ListenAndServe(":3333", r)
-}
 
-func HandleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	// tpl.
+	})
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": "ok",
+		})
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
+	}
+	log.Printf("Listening on port %s", port)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), r); err != nil {
+		log.Fatal(err)
+	}
 }
