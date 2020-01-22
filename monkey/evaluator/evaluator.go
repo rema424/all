@@ -402,3 +402,22 @@ func evalHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Obje
 
 	return &object.Hash{Pairs: pairs}
 }
+
+func DefineMacros(program *ast.Program, env *object.Environment) {
+	definitions := []int{}
+
+	for i, statement := range program.Statements {
+		if isMacroDefinition(statement) {
+			addMacro(statement, env)
+			definitions = append(definitions, i)
+		}
+	}
+
+	for i := len(definitions) - 1; i >= 0; i-- {
+		difinitionIndex := definitions[i]
+		program.Statements = append(
+			program.Statements[:difinitionIndex],
+			program.Statements[difinitionIndex+1:]...,
+		)
+	}
+}
