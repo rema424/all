@@ -107,8 +107,8 @@ class Guestbook(webapp2.RequestHandler):
 
         if users.get_current_user():
             greeting.author = Author(
-                    identity=users.get_current_user().user_id(),
-                    email=users.get_current_user().email())
+                identity=users.get_current_user().user_id(),
+                email=users.get_current_user().email())
 
         greeting.content = self.request.get('content')
         greeting.put()
