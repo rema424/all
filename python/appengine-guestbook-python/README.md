@@ -7,16 +7,20 @@ High Replication Datastore (HRD) and retrieved using a strongly consistent
 (ancestor) query.
 
 ## Products
+
 - [App Engine][1]
 
 ## Language
+
 - [Python][2]
 
 ## APIs
+
 - [NDB Datastore API][3]
 - [Users API][4]
 
 ## Dependencies
+
 - [webapp2][5]
 - [jinja2][6]
 - [Twitter Bootstrap][7]
@@ -28,7 +32,6 @@ High Replication Datastore (HRD) and retrieved using a strongly consistent
 [5]: http://webapp-improved.appspot.com/
 [6]: http://jinja.pocoo.org/docs/
 [7]: http://twitter.github.com/bootstrap/
-
 
 ## E2E Test for this sample app
 
@@ -50,3 +53,13 @@ Set the environment variable to point to your deployed app:
 Finally, run the test
 
     python e2e/test_e2e.py
+
+## setup
+
+```sh
+pip install sqlalchemy pymysql
+mysql.server start
+mysql -uroot -e 'create database if not exists py_sqlalchemy_sandbox;'
+mysql -uroot -e 'create user if not exists tester@localhost identified by "Passw0rd!";'
+mysql -uroot -e 'grant all privileges on py_sqlalchemy_sandbox.* to tester@localhost;'
+```
