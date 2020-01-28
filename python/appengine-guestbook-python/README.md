@@ -63,3 +63,25 @@ mysql -uroot -e 'create database if not exists py_sqlalchemy_sandbox;'
 mysql -uroot -e 'create user if not exists tester@localhost identified by "Passw0rd!";'
 mysql -uroot -e 'grant all privileges on py_sqlalchemy_sandbox.* to tester@localhost;'
 ```
+
+## set up
+
+```sh
+brew install python@2 python
+brew upgrade python@2 python
+python2 --version
+pip2 --version
+python3 --version
+pip3 --version
+pip2 install --upgrade virtualenv
+pip3 install --upgrade virtualenv
+cd python/appengine-guestbook-python/
+ls
+virtualenv --python python2 env
+source /Users/rm/dev/all/python/appengine-guestbook-python/env/bin/activate
+/Users/rm/dev/all/python/appengine-guestbook-python/env/bin/python2.7 -m pip install -U "pylint<2.0.0"
+source env/bin/activate
+ls
+ls
+python --version
+```
