@@ -1,3 +1,5 @@
+// package comment
+
 package greet
 
 // go:generate gofake -type=Greeter
