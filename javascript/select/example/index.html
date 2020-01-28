@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <select name="animal" id="animal">
+    <option value="1">いぬ</option>
+    <option value="2">ねこ</option>
+    <option value="3">うさぎ</option>
+  </select>
+  <div class="msg"></div>
+
+  <script>
+    const selectBox = document.querySelector('#animal');
+    const msg = document.querySelector('.msg');
+
+    selectBox.addEventListener('change', e => {
+      msg.textContent = `value は ${e.target.value} だよ〜〜`
+    })
+
+    selectBox.dispatchEvent(new Event("change"));
+  </script>
+</body>
+
+</html>
