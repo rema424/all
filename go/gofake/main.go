@@ -12,7 +12,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&typ, "type", ".", "type name")
+	flag.StringVar(&typ, "type", "Greeter", "type name")
 	flag.StringVar(&dir, "dir", ".", "dir name")
 	flag.Parse()
 

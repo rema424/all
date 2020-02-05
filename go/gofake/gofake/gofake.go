@@ -2,18 +2,20 @@ package gofake
 
 import (
 	"fmt"
+	"go/ast"
 	"go/build"
-
-	"github.com/k0kubun/pp"
+	"go/parser"
+	"go/token"
+	"path/filepath"
 )
 
 func Run(typ, dir string) {
-	fmt.Println(
-		build.AllowBinary,
-		build.FindOnly,
-		build.IgnoreVendor,
-		build.ImportComment,
-	)
+	// fmt.Println(
+	// 	build.AllowBinary,
+	// 	build.FindOnly,
+	// 	build.IgnoreVendor,
+	// 	build.ImportComment,
+	// )
 	// p, err := build.Default.ImportDir("greet", build.AllowBinary)
 	// p, err := build.Default.ImportDir("greet", build.FindOnly)
 	// p, err := build.Default.ImportDir("greet", build.IgnoreVendor)
@@ -21,10 +23,51 @@ func Run(typ, dir string) {
 	if err != nil {
 		panic(err)
 	}
-	files := make([]string, len(pkg.GoFiles))
+	paths := make([]string, len(pkg.GoFiles))
 	for i, f := range pkg.GoFiles {
-		files[i] = f
+		paths[i] = filepath.Join(pkg.Dir, f)
 	}
-	pp.Println(pkg)
-	fmt.Printf("%q\n", files)
+	// pp.Println(pkg)
+	fmt.Printf("%q\n", paths)
+
+	fset := token.NewFileSet()
+	for _, p := range paths {
+		f, err := parser.ParseFile(fset, p, nil, 0)
+		if err != nil {
+			panic(err)
+		}
+
+		ast.Inspect(f, func(node ast.Node) bool {
+			typeSpec, ok := node.(*ast.TypeSpec)
+			if !ok {
+				return true
+			}
+			if typeSpec.Name.String() != typ {
+				return true
+			}
+
+			ast.Inspect(typeSpec, func(node ast.Node) bool {
+				structType, ok := node.(*ast.StructType)
+				if !ok {
+					return true
+				}
+				fmt.Println(typeSpec.Name)
+
+				for _, field := range structType.Fields.List {
+					fmt.Print(field.Type, " ")
+					for i, name := range field.Names {
+						if i == len(field.Names)-1 {
+							fmt.Println(name)
+						} else {
+							fmt.Print(name, " ")
+						}
+					}
+				}
+
+				return false
+			})
+			return false
+		})
+		// pp.Println(f)
+	}
 }
