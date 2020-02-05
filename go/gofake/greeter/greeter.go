@@ -2,7 +2,7 @@
 
 package greet
 
-// go:generate gofake -type=Greeter
+//go:generate gofake -type=Greeter
 type Greeter interface {
 	Greet(left, right string) string
 }

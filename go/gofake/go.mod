@@ -1,4 +1,4 @@
-module ast
+module gofake
 
 require (
 	github.com/k0kubun/pp v3.0.1+incompatible

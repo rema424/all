@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ast/gofake"
 	"flag"
+	"gofake/gofake"
 	"os"
 )
 
@@ -12,8 +12,8 @@ var (
 )
 
 func init() {
-	flag.StringVar(&typ, "type", "", "type name")
-	flag.StringVar(&dir, "dir", "", "dir name")
+	flag.StringVar(&typ, "type", ".", "type name")
+	flag.StringVar(&dir, "dir", ".", "dir name")
 	flag.Parse()
 
 	if len(typ) == 0 {
