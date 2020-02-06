@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"gofake/gofake"
 	"os"
 )
@@ -23,5 +24,7 @@ func init() {
 }
 
 func main() {
-	gofake.Run(typ, dir)
+	b, err := gofake.MakeFileContents("animal")
+	fmt.Println(string(b), err)
+	// gofake.Run(typ, dir)
 }

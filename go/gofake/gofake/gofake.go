@@ -1,9 +1,11 @@
 package gofake
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"os"
@@ -96,6 +98,19 @@ func modifyGenFile() {
 	fmt.Println("modifyGenFile")
 }
 
-func makeGenFile(filePath string) {
-	os.Create(filePath)
+func makeGenFile(filePath string) error {
+	_, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func MakeFileContents(pkg string) ([]byte, error) {
+	var b bytes.Buffer
+	b.WriteString("package ")
+	b.WriteString(pkg)
+	b.WriteString("\n")
+
+	return format.Source(b.Bytes())
 }
