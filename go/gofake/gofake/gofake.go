@@ -6,6 +6,7 @@ import (
 	"go/build"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 )
 
@@ -59,7 +60,14 @@ func Run(typ, dir string) {
 				fmt.Println(filepath.Base(p))
 				fmt.Println(typeSpec.Name)
 
-				fmt.Println(makeGenFilePath(p))
+				fmt.Println()
+				genFilePath := makeGenFilePath(p)
+				isGenFileExists := isFileExists(genFilePath)
+				if isGenFileExists {
+					modifyGenFile()
+				} else {
+					makeGenFile(genFilePath)
+				}
 
 				for _, field := range structType.Fields.List {
 					fmt.Print(field.Type, " ")
@@ -82,4 +90,12 @@ func Run(typ, dir string) {
 		})
 		// pp.Println(f)
 	}
+}
+
+func modifyGenFile() {
+	fmt.Println("modifyGenFile")
+}
+
+func makeGenFile(filePath string) {
+	os.Create(filePath)
 }

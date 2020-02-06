@@ -1,3 +1,1 @@
-package greet
-
-type Dogs []*Dog
+package greeter

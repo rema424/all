@@ -1,4 +1,4 @@
-package greet
+package greeter
 
 //go:generate gofake -type=Dog
 type Dog struct {
