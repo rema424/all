@@ -51,7 +51,15 @@ func Run(typ, dir string) {
 				if !ok {
 					return true
 				}
+
+				// ----------------------------
+				// Struct Pcoccessing Start
+				// ----------------------------
+				fmt.Println(p)
+				fmt.Println(filepath.Base(p))
 				fmt.Println(typeSpec.Name)
+
+				fmt.Println(makeGenFilePath(p))
 
 				for _, field := range structType.Fields.List {
 					fmt.Print(field.Type, " ")
@@ -63,6 +71,10 @@ func Run(typ, dir string) {
 						}
 					}
 				}
+
+				// ----------------------------
+				// Struct Pcoccessing End
+				// ----------------------------
 
 				return false
 			})
