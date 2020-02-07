@@ -40,57 +40,15 @@ func Run(typ, dir string) {
 			panic(err)
 		}
 
-		ast.Inspect(f, func(node ast.Node) bool {
-			typeSpec, ok := node.(*ast.TypeSpec)
-			if !ok {
-				return true
-			}
-			if typeSpec.Name.String() != typ {
-				return true
-			}
-
-			ast.Inspect(typeSpec, func(node ast.Node) bool {
-				structType, ok := node.(*ast.StructType)
-				if !ok {
-					return true
-				}
-
-				// ----------------------------
-				// Struct Pcoccessing Start
-				// ----------------------------
-				fmt.Println(p)
-				fmt.Println(filepath.Base(p))
-				fmt.Println(typeSpec.Name)
-
-				fmt.Println()
-				genFilePath := makeGenFilePath(p)
-				isGenFileExists := isFileExists(genFilePath)
-				if isGenFileExists {
-					modifyGenFile()
-				} else {
-					makeGenFile(genFilePath)
-				}
-
-				for _, field := range structType.Fields.List {
-					fmt.Print(field.Type, " ")
-					for i, name := range field.Names {
-						if i == len(field.Names)-1 {
-							fmt.Println(name)
-						} else {
-							fmt.Print(name, " ")
-						}
-					}
-				}
-
-				// ----------------------------
-				// Struct Pcoccessing End
-				// ----------------------------
-
-				return false
-			})
-			return false
-		})
-		// pp.Println(f)
+		structs := ExtractStructs(f)
+		fmt.Println(structs)
+		b := MakeFileContents(pkg.Name, structs)
+		src, err := format.Source(b)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(b))
+		fmt.Println(string(src))
 	}
 }
 
@@ -106,11 +64,69 @@ func makeGenFile(filePath string) error {
 	return nil
 }
 
-func MakeFileContents(pkg string) ([]byte, error) {
+func MakeFileContents(pkg string, ss []Struct) []byte {
 	var b bytes.Buffer
 	b.WriteString("package ")
 	b.WriteString(pkg)
 	b.WriteString("\n")
 
-	return format.Source(b.Bytes())
+	for _, s := range ss {
+		b.WriteString(fmt.Sprintf("type %ss []*%s\n", s.Name, s.Name))
+		for _, f := range s.Fields {
+			b.WriteString(fmt.Sprintf("func (ss %ss) %ss() []%s { ", s.Name, f.Name, f.Type))
+			b.WriteString(fmt.Sprintf("res := make([]%s, len(ss)); ", f.Type))
+			b.WriteString("for i, s := range ss { ")
+			b.WriteString("res[i] = s." + f.Name + " ")
+			b.WriteString("}; ")
+			b.WriteString("return res ")
+			b.WriteString("}\n\n")
+		}
+	}
+
+	return b.Bytes()
+}
+
+func ExtractStructs(f *ast.File) []Struct {
+	ss := make([]Struct, 0, 10)
+	ast.Inspect(f, func(node ast.Node) bool {
+		typeSpec, ok := node.(*ast.TypeSpec)
+		if !ok {
+			return true
+		}
+
+		ast.Inspect(typeSpec, func(node ast.Node) bool {
+			structType, ok := node.(*ast.StructType)
+			if !ok {
+				return true
+			}
+
+			fields := make([]Field, 0, 10)
+			for _, field := range structType.Fields.List {
+				for _, name := range field.Names {
+					fields = append(fields, Field{
+						Name: name.Name,
+						Type: fmt.Sprint(field.Type),
+					})
+				}
+
+				ss = append(ss, Struct{
+					Name:   typeSpec.Name.Name,
+					Fields: fields,
+				})
+			}
+			return false
+		})
+		return false
+	})
+	return ss
+}
+
+type Struct struct {
+	Name   string
+	Fields []Field
+}
+
+type Field struct {
+	Name string
+	Type string
 }

@@ -1,8 +1,12 @@
 package greeter
 
+import "gofake/greeter/animal"
+
 //go:generate gofake -type=Dog
 type Dog struct {
-	name string
+	name   string
+	animal animal.Animal
+	ptr    *animal.Animal
 }
 
 // go:generate gofake -type=Greeter
