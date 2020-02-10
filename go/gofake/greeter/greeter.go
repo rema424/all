@@ -37,6 +37,8 @@ type Person struct {
 	Food struct {
 		Name string
 	}
+	valAnimal animal.Animal
+	ptrAnimal *animal.Animal
 }
 
 type Profile struct {

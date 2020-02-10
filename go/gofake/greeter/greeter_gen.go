@@ -1,5 +1,7 @@
 package greeter
 
+import "gofake/greeter/animal"
+
 type Persons []*Person
 
 func (ss Persons) IDs() []int64 {
@@ -62,6 +64,22 @@ func (ss Persons) Foods() []struct {
 	}, len(ss))
 	for i, s := range ss {
 		res[i] = s.Food
+	}
+	return res
+}
+
+func (ss Persons) valAnimals() []animal.Animal {
+	res := make([]animal.Animal, len(ss))
+	for i, s := range ss {
+		res[i] = s.valAnimal
+	}
+	return res
+}
+
+func (ss Persons) ptrAnimals() []*animal.Animal {
+	res := make([]*animal.Animal, len(ss))
+	for i, s := range ss {
+		res[i] = s.ptrAnimal
 	}
 	return res
 }

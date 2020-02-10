@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -13,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/imports"
 )
 
 func Run(typ, dir string) {
@@ -56,7 +57,11 @@ func Run(typ, dir string) {
 		structs := ExtractStructs(fset, f, typ)
 		// pp.Println(structs)
 		b := MakeFileContents(pkg.Name, structs)
-		src, err := format.Source(b)
+		// src, err := format.Source(b)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		src, err := imports.Process(p, b, nil)
 		if err != nil {
 			panic(err)
 		}
