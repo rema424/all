@@ -7,9 +7,12 @@ import (
 	"go/build"
 	"go/format"
 	"go/parser"
+	"go/printer"
 	"go/token"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func Run(typ, dir string) {
@@ -22,16 +25,26 @@ func Run(typ, dir string) {
 	// p, err := build.Default.ImportDir("greet", build.AllowBinary)
 	// p, err := build.Default.ImportDir("greet", build.FindOnly)
 	// p, err := build.Default.ImportDir("greet", build.IgnoreVendor)
+	// path, err := filepath.Abs(dir)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(path)
 	pkg, err := build.Default.ImportDir(dir, build.ImportComment)
+	// pkg, err := build.Default.ImportDir("greeter/", build.ImportComment)
 	if err != nil {
 		panic(err)
 	}
-	paths := make([]string, len(pkg.GoFiles))
-	for i, f := range pkg.GoFiles {
-		paths[i] = filepath.Join(pkg.Dir, f)
+	paths := make([]string, 0, len(pkg.GoFiles))
+	for _, f := range pkg.GoFiles {
+		if strings.Contains(f, "_gen") {
+			continue
+		}
+		path := filepath.Join(pkg.Dir, f)
+		paths = append(paths, path)
 	}
 	// pp.Println(pkg)
-	fmt.Printf("%q\n", paths)
+	// fmt.Printf("%q\n", paths)
 
 	fset := token.NewFileSet()
 	for _, p := range paths {
@@ -40,15 +53,23 @@ func Run(typ, dir string) {
 			panic(err)
 		}
 
-		structs := ExtractStructs(f)
-		fmt.Println(structs)
+		structs := ExtractStructs(fset, f, typ)
+		// pp.Println(structs)
 		b := MakeFileContents(pkg.Name, structs)
 		src, err := format.Source(b)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(string(b))
-		fmt.Println(string(src))
+		// fmt.Println(string(b))
+		// fmt.Println(string(src))
+		file, err := os.OpenFile(makeGenFilePath(p), os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := file.Write(src); err != nil {
+			panic(err)
+		}
+		file.Close()
 	}
 }
 
@@ -86,38 +107,48 @@ func MakeFileContents(pkg string, ss []Struct) []byte {
 	return b.Bytes()
 }
 
-func ExtractStructs(f *ast.File) []Struct {
+func ExtractStructs(fset *token.FileSet, f *ast.File, typ string) []Struct {
 	ss := make([]Struct, 0, 10)
+
 	ast.Inspect(f, func(node ast.Node) bool {
+		// *ast.TypeSpecに当たるまで再帰的に走査
 		typeSpec, ok := node.(*ast.TypeSpec)
 		if !ok {
 			return true
 		}
+		// 対象でない場合は走査打ち切り
+		if typeSpec.Name.Name != typ {
+			return false
+		}
+		// *ast.StructTypeでない場合は走査打ち切り
+		structType, ok := typeSpec.Type.(*ast.StructType)
+		if !ok {
+			return false
+		}
 
-		ast.Inspect(typeSpec, func(node ast.Node) bool {
-			structType, ok := node.(*ast.StructType)
-			if !ok {
-				return true
-			}
-
-			fields := make([]Field, 0, 10)
-			for _, field := range structType.Fields.List {
-				for _, name := range field.Names {
-					fields = append(fields, Field{
-						Name: name.Name,
-						Type: fmt.Sprint(field.Type),
-					})
+		fields := make([]Field, 0, 10)
+		// fmt.Println("go for loop")
+		for _, field := range structType.Fields.List {
+			for _, name := range field.Names {
+				var b strings.Builder
+				if err := printer.Fprint(&b, fset, field.Type); err != nil {
+					log.Fatal(err)
 				}
-
-				ss = append(ss, Struct{
-					Name:   typeSpec.Name.Name,
-					Fields: fields,
+				fields = append(fields, Field{
+					Name: name.Name,
+					Type: b.String(),
 				})
 			}
-			return false
-		})
+		}
+		s := Struct{
+			Name:   typeSpec.Name.Name,
+			Fields: fields,
+		}
+
+		ss = append(ss, s)
 		return false
 	})
+
 	return ss
 }
 
