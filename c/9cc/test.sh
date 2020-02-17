@@ -3,7 +3,7 @@ try() {
   expected="$1"
   input="$2"
 
-  ./9cc "$input" > tmp.s
+  docker run --rm -v ~/dev/all/c/9cc:/9cc -w /9cc compilerbook ./9cc "$input" > tmp.s
   docker run --rm -v ~/dev/all/c/9cc:/9cc -w /9cc compilerbook gcc -o tmp tmp.s
   docker run --rm -v ~/dev/all/c/9cc:/9cc -w /9cc compilerbook ./tmp
   actual="$?"
@@ -18,5 +18,6 @@ try() {
 
 try 0 0
 try 42 42
+try 21 "5+20-4"
 
 echo OK
