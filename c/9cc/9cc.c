@@ -20,7 +20,7 @@ struct Token
 {
   TokenKind kind; // トークンの型
   Token *next;    // 次の入力トークン
-  int val;        // kindがTK_NUMんぼ場合、その数値
+  int val;        // kindがTK_NUMの場合、その数値
   char *str;      // トークン文字列
 };
 
@@ -39,7 +39,7 @@ void error(char *fmt, ...)
 }
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
-// 芯を返す。それ以外の場合には偽を返す。
+// 真を返す。それ以外の場合には偽を返す。
 bool consume(char op)
 {
   if (token->kind != TK_RESERVED || token->str[0] != op)
@@ -62,7 +62,7 @@ void expect(char op)
 int expect_number()
 {
   if (token->kind != TK_NUM)
-    error("数ではありません。");
+    error("数ではありません");
   int val = token->val;
   token = token->next;
   return val;
@@ -102,7 +102,6 @@ Token *tokenize(char *p)
     if (*p == '+' || *p == '-')
     {
       cur = new_token(TK_RESERVED, cur, p++);
-      cur->val = strtol(p, &p, 10);
       continue;
     }
 
@@ -124,7 +123,7 @@ int main(int argc, char **argv)
 {
   if (argc != 2)
   {
-    fprintf(stderr, "引数の個数が正しくありません\n");
+    error("引数の個数が正しくありません");
     return 1;
   }
 
