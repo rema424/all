@@ -24,6 +24,9 @@ struct Token
   char *str;      // トークン文字列
 };
 
+// Input program
+char *user_input;
+
 // 現在着目しているトークン
 Token *token;
 
@@ -33,6 +36,21 @@ void error(char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+// Reports an error location and exit.
+void error_at(char *loc, char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, ""); // print pos spaces.
+  fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   exit(1);
@@ -53,7 +71,7 @@ bool consume(char op)
 void expect(char op)
 {
   if (token->kind != TK_RESERVED || token->str[0] != op)
-    error("'%c'ではありません", op);
+    error_at(token->str, "'%c'ではありません", op);
   token = token->next;
 }
 
@@ -62,7 +80,7 @@ void expect(char op)
 int expect_number()
 {
   if (token->kind != TK_NUM)
-    error("数ではありません");
+    error_at(token->str, "数ではありません");
   int val = token->val;
   token = token->next;
   return val;
@@ -84,8 +102,9 @@ Token *new_token(TokenKind kind, Token *cur, char *str)
 }
 
 // 入力文字列pをトークナイズしてそれを返す
-Token *tokenize(char *p)
+Token *tokenize()
 {
+  char *p = user_input;
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -112,7 +131,7 @@ Token *tokenize(char *p)
       continue;
     }
 
-    error("トークナイズできません");
+    error_at(p, "トークナイズできません");
   }
 
   new_token(TK_EOF, cur, p);
@@ -128,7 +147,8 @@ int main(int argc, char **argv)
   }
 
   // トークナイズする
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize();
 
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
