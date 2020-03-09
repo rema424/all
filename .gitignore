@@ -17,3 +17,4 @@ __pycache__/
 httpcache/
 redis/AdminLTE
 env
+venv
