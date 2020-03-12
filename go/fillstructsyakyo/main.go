@@ -71,9 +71,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(path)
-	byOffset(pkgs, path, offset)
-	// pp.Println("pkgs", pkgs)
+	fmt.Println(path, offset)
+
+	if offset > 0 {
+		err = byOffset(pkgs, path, offset)
+		switch err {
+		case nil:
+			return
+		case errNotFound:
+			// try to use line information
+			fmt.Printf("%v\n", err)
+		default:
+			log.Fatal(err)
+		}
+	}
 }
 
 func absPath(filename string) (string, error) {
@@ -89,18 +100,38 @@ func byOffset(lprog []*packages.Package, path string, offset int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(f, pkg, pos)
+
+	lit, litInfo, err := findCompositeLit(f, pkg.TypesInfo, pos)
+	if err != nil {
+		return err
+	}
+
+	start := lprog[0].Fset.Position(lit.Pos()).Offset
+	end := lprog[0].Fset.Position(lit.End()).Offset
+
+	importNames := buildImportNameMap(f)
+
+	// TODO
+
+	fmt.Println("f", f)
+	fmt.Println("pkg", pkg)
+	fmt.Println("pos", pos)
+	fmt.Println("lit", lit)
+	fmt.Println("litinfo", litInfo)
+	fmt.Println("start", start)
+	fmt.Println("end", end)
+	pp.Println("importNames", importNames)
 	return nil
 }
 
 func findPos(lprog []*packages.Package, path string, off int) (*ast.File, *packages.Package, token.Pos, error) {
 	for _, pkg := range lprog {
-		pp.Println("pkg", pkg)
+		// pp.Println("pkg", pkg)
 		astFiles := pkg.Syntax
 		for _, astFile := range astFiles {
 			if tokenFile := pkg.Fset.File(astFile.Pos()); tokenFile.Name() == path {
-				pp.Println("astFile", astFile)
-				pp.Println("tokenFile", tokenFile)
+				// pp.Println("astFile", astFile)
+				// pp.Println("tokenFile", tokenFile)
 				if off > tokenFile.Size() {
 					return nil, nil, 0, fmt.Errorf("file size (%d) is smaller than given offset (%d)", tokenFile.Size(), off)
 				}
@@ -123,6 +154,46 @@ type litInfo struct {
 func findCompositeLit(f *ast.File, info *types.Info, pos token.Pos) (*ast.CompositeLit, litInfo, error) {
 	var linfo litInfo
 	path, _ := astutil.PathEnclosingInterval(f, pos, pos)
-	pp.Println(path)
+	// pp.Println("astFile", f)
+	// pp.Println("pos", pos)
+	// pp.Println("path", path)
+	// pp.Println("info.Types", info.Types)
+	for i, n := range path {
+		if lit, ok := n.(*ast.CompositeLit); ok {
+			pp.Println("lit", lit)
+			linfo.name, _ = info.Types[lit].Type.(*types.Named)
+			linfo.typ, ok = info.Types[lit].Type.Underlying().(*types.Struct)
+			if !ok {
+				return nil, linfo, errNotFound
+			}
+			if expr, ok := path[i+1].(ast.Expr); ok {
+				linfo.hideType = hydeType(info.Types[expr].Type)
+			}
+			return lit, linfo, nil
+		}
+	}
+	fmt.Println("aaaaaaaaaaaaaaaaaaaa")
 	return nil, linfo, errNotFound
+}
+
+func hydeType(t types.Type) bool {
+	switch t.(type) {
+	case *types.Array, *types.Map, *types.Slice:
+		return true
+	default:
+		return false
+	}
+}
+
+func buildImportNameMap(f *ast.File) map[string]string {
+	imports := make(map[string]string)
+	pp.Println("f.Imports", f.Imports)
+	for _, i := range f.Imports {
+		if i.Name != nil && i.Name.Name != "_" {
+			path := i.Path.Value
+			pp.Println("i.Path", i.Path)
+			imports[path[1:len(path)-1]] = i.Name.Name
+		}
+	}
+	return imports
 }
