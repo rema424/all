@@ -1,4 +1,8 @@
 {
   "go.lintOnSave": "off",
-  "python.pythonPath": "/usr/local/bin/python3"
+  "python.pythonPath": "/Users/rm/dev/all/venv/bin/python3",
+  "python.linting.flake8Path": "",
+  "python.linting.lintOnSave": false,
+  "python.linting.pylintEnabled": false,
+  "python.formatting.provider": "black"
 }

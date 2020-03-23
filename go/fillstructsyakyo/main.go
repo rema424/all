@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/token"
 	"go/types"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,7 +55,10 @@ func main() {
 
 	var overlay map[string][]byte
 	if modified {
+		pp.Println("===================")
+
 		overlay, err = buildutil.ParseOverlayArchive(os.Stdin)
+		pp.Println("===================")
 		if err != nil {
 			log.Fatalf("invalid archive: %v", err)
 		}
@@ -77,6 +84,7 @@ func main() {
 		err = byOffset(pkgs, path, offset)
 		switch err {
 		case nil:
+			fmt.Println("abcde\b")
 			return
 		case errNotFound:
 			// try to use line information
@@ -110,18 +118,42 @@ func byOffset(lprog []*packages.Package, path string, offset int) error {
 	end := lprog[0].Fset.Position(lit.End()).Offset
 
 	importNames := buildImportNameMap(f)
+	newlit, lines := zeroValue(pkg.Types, importNames, lit, litInfo)
+	out, err := prepareOutput(newlit, lines, start, end)
+	if err != nil {
+		return err
+	}
+	b1, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	pp.Println("b1", string(b1))
+	b2 := append(b1[:start], append([]byte("ここを追加"), b1[end:]...)...)
+	// b2 := append(b1[:start], b1[end:]...)...)
+	pp.Println("b2", string(b2))
+	// file, err := os.Open(path)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer file.Close()
+	// file.Seek(int64(start), 0)
+	// file.Truncate(int64(end - start))
+	// b, err := ioutil.ReadAll(file)
+	// // 出力
+	// fmt.Println(string(b))
 
 	// TODO
 
-	fmt.Println("f", f)
-	fmt.Println("pkg", pkg)
-	fmt.Println("pos", pos)
-	fmt.Println("lit", lit)
-	fmt.Println("litinfo", litInfo)
-	fmt.Println("start", start)
-	fmt.Println("end", end)
-	pp.Println("importNames", importNames)
-	return nil
+	// fmt.Println("f", f)
+	// fmt.Println("pkg", pkg)
+	// fmt.Println("pos", pos)
+	// fmt.Println("lit", lit)
+	// fmt.Println("litinfo", litInfo)
+	// fmt.Println("start", start)
+	// fmt.Println("end", end)
+	// pp.Println("importNames", importNames)
+	pp.Println("out", out)
+	return json.NewEncoder(os.Stdout).Encode([]output{out})
 }
 
 func findPos(lprog []*packages.Package, path string, off int) (*ast.File, *packages.Package, token.Pos, error) {
@@ -196,4 +228,29 @@ func buildImportNameMap(f *ast.File) map[string]string {
 		}
 	}
 	return imports
+}
+
+type output struct {
+	Start int    `json:"start"`
+	End   int    `json:"end"`
+	Code  string `json:"code"`
+}
+
+func prepareOutput(n ast.Node, lines, start, end int) (output, error) {
+	fset := token.NewFileSet()
+	file := fset.AddFile("", -1, lines)
+	for i := 1; i <= lines; i++ {
+		file.AddLine(i)
+	}
+
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, n); err != nil {
+		return output{}, err
+	}
+
+	return output{
+		Start: start,
+		End:   end,
+		Code:  buf.String(),
+	}, nil
 }
