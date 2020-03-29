@@ -30,6 +30,8 @@ require (
 	github.com/ugorji/go v1.1.7 // indirect
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	golang.org/x/tools v0.0.0-20191105231337-689d0f08e67a
+	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 	gonum.org/v1/gonum v0.0.0-20190915125329-975d99cd20a9 // indirect
 	google.golang.org/api v0.13.0
 	google.golang.org/appengine v1.6.5
