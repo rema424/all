@@ -1,5 +1,4 @@
 {
   "go.lintOnSave": "off",
-  "python.pythonPath": "/usr/local/bin/python3",
-  "python.venvPath": "/Users/rema/dev/all/python/python-machine-learning/venv"
+  "python.pythonPath": "/Users/rema/dev/all/venv/bin/python3.7"
 }
