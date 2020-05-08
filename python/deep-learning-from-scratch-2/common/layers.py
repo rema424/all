@@ -1,6 +1,6 @@
 # coding: utf-8
 import numpy as np
-from common.functions import softmax_2, cross_entropy_error
+from common.functions import softmax_2, softmax_3, cross_entropy_error
 
 
 class MatMul:
@@ -71,7 +71,8 @@ class SoftmaxWithLoss:
         pass
 
     def forward(self, x, t):
-        self.y = softmax_2(x)
+        # self.y = softmax_2(x)
+        self.y = softmax_3(x)
         self.t = t
 
         # 教師ラベルがone-hotベクトルの場合、正解のインデックスに変換
