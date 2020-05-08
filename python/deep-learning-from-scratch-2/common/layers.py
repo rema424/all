@@ -34,7 +34,7 @@ class Sigmoid:
         return out
 
     def backward(self, dout):
-        dx = dout * (1.0 * self.out) * self.out
+        dx = dout * (1.0 - self.out) * self.out
         return dx
 
 
