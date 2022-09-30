@@ -4,38 +4,17 @@ go 1.12
 
 require (
 	cloud.google.com/go/storage v1.2.1
-	github.com/clbanning/x2j v0.0.0-20180326210544-5e605d46809c // indirect
-	github.com/flosch/pongo2 v0.0.0-20190707114632-bbf5a6c351f4 // indirect
-	github.com/go-playground/locales v0.13.0 // indirect
-	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/go-sql-driver/mysql v1.4.1
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
-	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/mux v1.7.3
-	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/jmoiron/sqlx v1.2.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/labstack/echo v3.3.10+incompatible
-	github.com/labstack/echo/v4 v4.1.10
-	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/pkg/errors v0.8.1 // indirect
-	github.com/rema424/sqlxx v0.0.0-20191110144531-64f6020cf1f6
-	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/stretchr/codecs v0.0.0-20170403063245-04a5b1e1910d // indirect
-	github.com/stretchr/gomniauth v0.0.0-20170717123514-4b6c822be2eb // indirect
-	github.com/stretchr/signature v0.0.0-20160104132143-168b2a1e1b56 // indirect
-	github.com/stretchr/stew v0.0.0-20130812190256-80ef0842b48b // indirect
-	github.com/stretchr/tracer v0.0.0-20140124184152-66d3696bba97 // indirect
-	github.com/ugorji/go v1.1.7 // indirect
-	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	github.com/labstack/gommon v0.3.1 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 	golang.org/x/tools v0.0.0-20191105231337-689d0f08e67a
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
-	gonum.org/v1/gonum v0.0.0-20190915125329-975d99cd20a9 // indirect
 	google.golang.org/api v0.13.0
-	google.golang.org/appengine v1.6.5
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v9 v9.30.0
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
+	google.golang.org/appengine v1.6.5 // indirect
 )
